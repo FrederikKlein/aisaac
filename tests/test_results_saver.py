@@ -1,69 +1,64 @@
-import os
 import unittest
-from unittest.mock import patch, mock_open
+from unittest.mock import MagicMock, mock_open, patch
 
-from aisaac.aisaac.utils.result_saver import ResultSaver
+from aisaac.aisaac.utils.result_saver import ResultSaver  # Adjust this import according to your project structure
 
 
 class TestResultSaver(unittest.TestCase):
 
-    @patch('os.makedirs')
-    @patch('os.path.exists')
-    @patch('shutil.rmtree')
-    def test_reset_results(self, mock_rmtree, mock_exists, mock_makedirs):
-        # Setup
-        result_path = 'test_results'
-        result_file = 'test.csv'
-        chroma_path = 'test_chroma'
+    def setUp(self):
+        # Mock context manager and its return values
+        self.mock_context_manager = MagicMock()
+        self.mock_context_manager.get_config.side_effect = lambda key: {
+            'RESULT_PATH': '/fake/result/path',
+            'RESULT_FILE': 'results.csv',
+            'CHROMA_PATH': '/fake/chroma/path',
+            'RESET_RESULTS': 'True'
+        }[key]
 
-        # Test when chroma_path exists
-        mock_exists.return_value = True
-        rs = ResultSaver(result_path, result_file, reset_results=True, chroma_path=chroma_path)
-        rs.reset_results()
+        # Patch 'open' here, before instantiating ResultSaver
+        patcher = patch('builtins.open', mock_open())
+        self.addCleanup(patcher.stop)  # Ensure patch is cleaned up after tests
+        self.mock_file = patcher.start()
 
-        mock_rmtree.assert_called_once_with(chroma_path)
-        mock_makedirs.assert_called_once_with(chroma_path)
+        # Now instantiate ResultSaver
+        self.result_saver = ResultSaver(self.mock_context_manager)
 
-        mock_rmtree.reset_mock()
-        mock_makedirs.reset_mock()
-
-        # Test when chroma_path does not exist
-        mock_exists.return_value = False
-        rs.reset_results()
-
-        mock_rmtree.assert_not_called()
-        mock_makedirs.assert_called_with(chroma_path)
-
-    @patch('csv.DictWriter')
+    @patch('os.path.join', return_value='/fake/result/path/results.csv')
     @patch('builtins.open', new_callable=mock_open)
-    def test_write_csv(self, mock_file, mock_dict_writer):
-        result_path = 'test_results'
-        result_file = 'test.csv'
-        rs = ResultSaver(result_path, result_file)
-
-        test_data = [{'title': 'test1', 'converted': True}]
-        rs.write_csv(test_data)
-
-        mock_file.assert_called_once_with(os.path.join(result_path, result_file), 'w', newline='')
-        mock_dict_writer.return_value.writeheader.assert_called_once()
-        mock_dict_writer.return_value.writerows.assert_called_once_with(test_data)
+    def test_write_csv(self, mock_file, mock_join):
+        self.result_saver.write_csv([{'title': 'Test', 'converted': True}])
+        mock_file.assert_called_once_with('/fake/result/path/results.csv', 'w', newline='')
+        mock_file().write.assert_called()  # Check if write was called, can be more specific if needed
 
     @patch('builtins.open', new_callable=mock_open, read_data='title,converted\nTest,True\n')
     def test_read_csv_to_dict_list(self, mock_file):
-        result_path = 'test_results'
-        result_file = 'test.csv'
-        rs = ResultSaver(result_path, result_file)
+        result_list = self.result_saver.read_csv_to_dict_list()
+        self.assertEqual(result_list, [{'title': 'Test', 'converted': 'True'}])
+        mock_file.assert_called_once_with('/fake/result/path/results.csv', 'r')
 
-        expected_data = [{'title': 'Test', 'converted': 'True'}]
-        actual_data = rs.read_csv_to_dict_list()
+    @patch('aisaac.aisaac.utils.result_saver.ResultSaver.read_csv_to_dict_list', return_value=[{'title': 'Test', 'converted': True}])
+    @patch('aisaac.aisaac.utils.result_saver.ResultSaver.write_csv')
+    def test_update_csv(self, mock_write_csv, mock_read_csv):
+        self.result_saver.update_csv([{'title': 'Test', 'converted': False}])
+        mock_read_csv.assert_called_once()
+        mock_write_csv.assert_called_once()
 
-        self.assertEqual(actual_data, expected_data)
-        mock_file.assert_called_once_with(os.path.join(result_path, result_file), 'r')
+    @patch('aisaac.aisaac.utils.result_saver.ResultSaver.read_csv_to_dict_list', return_value=[{'title': 'Old', 'converted': True}])
+    @patch('aisaac.aisaac.utils.result_saver.ResultSaver.write_csv')
+    def test_add_data_csv(self, mock_write_csv, mock_read_csv):
+        self.result_saver.add_data_csv([{'title': 'New', 'converted': False}])
+        mock_read_csv.assert_called_once()
+        mock_write_csv.assert_called_once_with(
+            [{'title': 'Old', 'converted': True}, {'title': 'New', 'converted': False}])
 
-    # Add more tests for other methods like add_data_csv, get_result_list, etc.
+    @patch('builtins.open', new_callable=mock_open)
+    def test_reset_results(self, mock_file):
+        self.result_saver.reset_results()
+        mock_file.assert_called_once_with('/fake/result/path/results.csv', 'w', newline='')
+
+    # Additional tests for create_new_result_entry, get_result_list, and set_up_new_results_file can be added similarly
 
 
 if __name__ == '__main__':
     unittest.main()
-
-#%%

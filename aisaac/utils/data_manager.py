@@ -80,8 +80,6 @@ class VectorDataManager:
         self.full_chroma_path = self.system_manager.get_full_path(self.chroma_path)
         self.logger = Logger(__name__).get_logger()
 
-        self.create_document_stores()
-
     def chunk_documents(self, documents):
         # switch between sentence splitting and recursive character splitting
         if self.apply_sentence_splitting_chunking:
@@ -120,7 +118,7 @@ class VectorDataManager:
     def create_document_stores(self):
         self.result_manager.reset_results()
         self.system_manager.reset_directory(self.full_chroma_path)
-        data = self.document_data_manager.get_all_data()
+        data = self.document_data_manager.get_data()
         for document in data:
             title = os.path.splitext(os.path.basename(document.metadata["source"]))[0]
             path = f"{self.full_chroma_path}/{title}"

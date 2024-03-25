@@ -8,13 +8,13 @@ import shutil
 
 
 class SystemManager:
-    def __init__(self, base_directory: str):
+    def __init__(self, context_manager):
         """
         Initialize the System Manager with a base directory.
 
-        :param base_directory: The root directory where the application's data is stored.
+        :param context_manager: The ContextManager instance to use for configuration.
         """
-        self.base_directory = base_directory
+        self.base_directory = context_manager.get_config('BASE_DIR')
 
     def make_directory(self, relative_path: str) -> str:
         """
@@ -43,7 +43,7 @@ class SystemManager:
 
         :param relative_path: The relative path from the base directory where the directory should be reset.
         """
-        full_path = self.make_directory(relative_path)
+        full_path = self.get_full_path(relative_path)
         shutil.rmtree(full_path)
         os.makedirs(full_path)
 
