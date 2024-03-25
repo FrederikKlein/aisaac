@@ -130,13 +130,12 @@ class VectorDataManager:
                 continue
 
             self.logger.debug(f"Creating document store for {title}.")
-            self.result_manager.create_result_list(title)
+            self.result_manager.create_new_result_entry(title)
 
             try:
                 self.save_to_chroma(self.chunk_documents([document]), title, path)
                 self.result_manager.update_result_list(title, "embedded", True)
                 self.logger.info(f"Created document store for {title}.")
-                # results_dict[document.metadata["embedded"]] = True
             except:
                 self.result_manager.update_result_list(title, "embedded", False)
                 self.logger.error(f"Embedding failed for {title}.")

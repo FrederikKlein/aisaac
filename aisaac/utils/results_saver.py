@@ -1,6 +1,5 @@
 import csv
 import os
-import shutil
 
 
 class ResultSaver:
@@ -42,7 +41,7 @@ class ResultSaver:
         self.write_csv(combined_data)
 
     @staticmethod
-    def create_result_list(title):
+    def __create_result_list(self, title):
         temp_dict = [{
             "title": title,
             "converted": True,
@@ -52,6 +51,10 @@ class ResultSaver:
             "reasoning": {}
         }, ]
         return temp_dict
+
+    def create_new_result_entry(self, title):
+        result_list = self.__create_result_list(title)
+        self.add_data_csv(result_list)
 
     def get_result_list(self, title):
         result_row = {}
@@ -72,11 +75,6 @@ class ResultSaver:
     def reset_results(self):
         # Reset the file
         self.write_csv([])
-        # Delete chroma subdirectories
-        if self.chroma_path and os.path.exists(self.chroma_path):
-            shutil.rmtree(self.chroma_path)
-        if self.chroma_path:
-            os.makedirs(self.chroma_path)
 
     def set_up_new_results_file(self, new_file_path, data_entries):
         # Reset the file
