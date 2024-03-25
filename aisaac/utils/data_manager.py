@@ -1,3 +1,4 @@
+import math
 import os
 import random
 
@@ -148,6 +149,18 @@ class VectorDataManager:
             self.logger.error(f"Document store for {title} does not exist.")
             return None
         return Chroma(persist_directory=path, embdding_function=self.model_manager.get_embedding())
+
+    def get_vectorstore_with_sigmoid_relevance_score_fn(self, title: str):
+        path = f"{self.chroma_path}/{title}"
+        if not self.system_manager.path_exists(path):
+            self.logger.error(f"Document store for {title} does not exist.")
+            return None
+        return Chroma(
+            persist_directory=path,
+            embedding_function=self.model_manager.get_embedding(),
+            collection_metadata={"hnsw:space": "l2"},
+            relevance_score_fn=lambda distance: 1 / (1 + math.exp(-distance))
+        )
 
     def get_vectorstores(self):
         vectorstores = {}
