@@ -121,8 +121,6 @@ class TestVectorDataManager(unittest.TestCase):
     @patch('aisaac.aisaac.utils.data_manager.DocumentManager.get_data')
     @patch('os.path.exists')
     def test_create_document_stores(self, mock_path_exists, mock_chunk_documents, mock_save_to_chroma, mock_get_data):
-        #ignore this test for now
-        return
         # Setup the mocks
         mock_path_exists.side_effect = [False, True]  # First path does not exist, second does
         mock_chunk_documents.return_value = ['chunk1', 'chunk2']  # Return value for chunked documents
