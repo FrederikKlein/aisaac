@@ -113,7 +113,7 @@ class TestVectorDataManager(unittest.TestCase):
         self.vdm.save_to_chroma(chunks, title, path)
         self.vdm.logger.error.assert_called_with(f"Error saving chunks to {path}: Test error")
 
-    # Add more tests for other methods like create_document_stores, etc.
+    # TODO Add more test cases for getter methods in VectorDataManager
 
 
 if __name__ == '__main__':

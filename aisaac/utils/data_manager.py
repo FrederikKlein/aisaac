@@ -142,4 +142,29 @@ class VectorDataManager:
 
         self.logger.info("All document stores created.")
 
+    def get_vectorstore(self, title: str):
+        path = f"{self.chroma_path}/{title}"
+        if not self.system_manager.path_exists(path):
+            self.logger.error(f"Document store for {title} does not exist.")
+            return None
+        return Chroma(persist_directory=path, embdding_function=self.model_manager.get_embedding())
+
+    def get_vectorstores(self):
+        vectorstores = {}
+        for title in self.document_data_manager.get_all_titles():
+            vectorstores[title] = self.get_vectorstore(title)
+        return vectorstores
+
+    def get_unified_vectorstore(self):
+        vectorstores = self.get_vectorstores()
+        vectorstore_baseline = Chroma(embedding_function=self.model_manager.get_embedding())
+        for title in vectorstores:
+            db2_data = vectorstores[title]._collection.get(include=['documents', 'metadatas', 'embeddings'])
+            vectorstore_baseline._collection.add(
+                embeddings=db2_data['embeddings'],
+                metadatas=db2_data['metadatas'],
+                documents=db2_data['documents'],
+                ids=db2_data['ids']
+            )
+        return vectorstores
 # %%
