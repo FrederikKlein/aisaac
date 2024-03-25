@@ -4,9 +4,12 @@ import sys
 
 
 class Logger:
-    def __init__(self, name, context_manager, level=logging.DEBUG):
+    def __init__(self, name, context_manager=None, level=logging.DEBUG):
         self.logger = logging.getLogger(name)
-        self.level = context_manager.get_config('LOGGING_LEVEL')
+        if not context_manager:
+            self.level = level
+        else:
+            self.level = context_manager.get_config('LOGGING_LEVEL')
         self.setup_logging()
 
     def setup_logging(self):
