@@ -6,9 +6,8 @@ from langchain.document_loaders import DirectoryLoader
 from aisaac.aisaac.utils.logger import Logger
 
 
-class DataManager:
+class DocumentManager:
     def __init__(self, context_manager):
-        self.context_manager = context_manager
         self.data_paths = context_manager.get_config('DATA_PATHS')
         self.data_format = context_manager.get_config('DATA_FORMAT')
         self.random_subset = context_manager.get_config('RANDOM_SUBSET') == 'True'
@@ -59,3 +58,89 @@ class DataManager:
         else:
             self.logger.info(f"Loaded all runnable data.")
         return data
+
+
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.text_splitter import NLTKTextSplitter
+from langchain.vectorstores.chroma import Chroma
+from langchain.schema import Document
+
+
+class VectorDataManager:
+
+    def __init__(self, context_manager):
+        self.apply_sentence_splitting_chunking = context_manager.get_config(
+            'APPLY_SENTENCE_SPLITTING_CHUNKING') == 'True'
+        self.chunk_size = int(context_manager.get_config('CHUNK_SIZE'))
+        self.chunk_overlap = int(context_manager.get_config('CHUNK_OVERLAP'))
+        self.model_manager = context_manager.get_model_manager()
+        self.document_data_manager = context_manager.get_document_data_manager()
+        self.system_manager = context_manager.get_system_manager()
+        self.result_manager = context_manager.get_results_saver()
+        self.chroma_path = self.system_manager.get_path("chroma")
+        self.logger = Logger(__name__).get_logger()
+
+        self.create_document_stores()
+
+    def chunk_documents(self, documents):
+        # switch between sentence splitting and recursive character splitting
+        if self.apply_sentence_splitting_chunking:
+            text_splitter = NLTKTextSplitter()
+            chunks = text_splitter.split_text(documents)
+            self.logger.info(f"Chunked {len(documents)} documents into {len(chunks)} chunks using sentence splitting")
+            return chunks
+
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=self.chunk_size,
+            chunk_overlap=self.chunk_overlap,
+            length_function=len,
+            add_start_index=True,
+        )
+        chunks = text_splitter.split_documents(documents)
+        self.logger.info(f"Chunked {len(documents)} documents into {len(chunks)} chunks")
+        return chunks
+
+    def save_to_chroma(self, chunks: list[Document], title: str, path: str):
+        self.logger.info(f"Creating vector store for {title}.")
+        self.logger.debug(f"Saving to {path}.")
+
+        # system manager make directory
+        self.system_manager.make_directory(path)
+
+        # Create a new DB from the documents.
+        try:
+            db = Chroma.from_documents(
+                chunks, self.model_manager.get_embedding(), persist_directory=path
+            )
+            db.persist()
+            self.logger.debug(f"Saved {len(chunks)} chunks to {path}.")
+        except Exception as e:
+            self.logger.error(f"Error saving chunks to {path}: {e}")
+
+    def create_document_stores(self):
+        self.result_manager.reset_results()
+        self.system_manager.reset_document_stores(self.chroma_path)
+        data = self.document_data_manager.get_all_data()
+        for document in data:
+            title = os.path.splitext(os.path.basename(document.metadata["source"]))[0]
+            path = f"{self.chroma_path}/{title}"
+            # check if the document is already embedded
+            if self.system_manager.path_exists(path):
+                self.logger.info(f"Document store for {title} already exists and was not reset.")
+                continue
+
+            self.logger.debug(f"Creating document store for {title}.")
+            self.result_manager.create_result_list(title)
+
+            try:
+                self.save_to_chroma(self.chunk_documents([document]), title, path)
+                self.result_manager.update_result_list(title, "embedded", True)
+                self.logger.info(f"Created document store for {title}.")
+                # results_dict[document.metadata["embedded"]] = True
+            except:
+                self.result_manager.update_result_list(title, "embedded", False)
+                self.logger.error(f"Embedding failed for {title}.")
+
+        self.logger.info("All document stores created.")
+
+# %%
