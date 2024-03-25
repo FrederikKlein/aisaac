@@ -2,7 +2,7 @@ import os
 import unittest
 from unittest.mock import patch, mock_open
 
-from aisaac.aisaac.utils.results_saver import ResultSaver
+from aisaac.aisaac.utils.result_saver import ResultSaver
 
 
 class TestResultSaver(unittest.TestCase):
