@@ -4,13 +4,15 @@ import shutil
 
 
 class ResultSaver:
-    def __init__(self, result_path, result_file, reset_results=False, chroma_path="chroma"):
-        self.result_path = result_path
-        self.result_file = result_file
-        self.output_file_path = os.path.join(result_path, result_file)
+    def __init__(self, context_manager):
+        self.context_manager = context_manager
+        self.result_path = self.context_manager.get_config('RESULT_PATH')
+        self.result_file = self.context_manager.get_config('RESULT_FILE')
+        self.output_file_path = os.path.join(self.result_path, self.result_file)
         self.csv_headers = ['title', 'converted', 'embedded', 'relevant', 'checkpoints', 'reasoning']
-        self.chroma_path = chroma_path
-        if reset_results:
+        self.chroma_path = self.context_manager.get_config('CHROMA_PATH')
+        self.reset_results_bool = self.context_manager.get_config('RESET_RESULTS') == 'True'
+        if self.reset_results_bool:
             self.reset_results()
 
     def write_csv(self, data):

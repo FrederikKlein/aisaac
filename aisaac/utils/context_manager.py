@@ -23,7 +23,8 @@ class ContextManager:
         'RESET_RESULTS': True,
         'CHECKPOINT_DICTIONARY': None,
         'PROMPT_TEMPLATE': None,
-        'QUESTION': None
+        'QUESTION': None,
+        'CSV_HEADER': ["title", "converted", "embedded", "relevant", "checkpoints", "reasoning"]
     }
 
     @classmethod
