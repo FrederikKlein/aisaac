@@ -18,6 +18,21 @@ class SimilaritySearcher:
         self.apply_reranking = context_manager.get_config('RERANKING') == 'True'
         self.apply_relevance_threshold = context_manager.get_config('RELEVANCE_THRESHOLD') == 'True'
 
+    def __apply_reranking_method(self, results, query_text):
+        # TODO replace with actual API key
+        co = cohere.Client("Dz03PKYzHRwgvTgPWucDClzr2RylARxhmex7cGJ9")
+        # the content of results is docs
+        docs = [doc.page_content for doc, _score in results]
+        # TODO replace with actual model
+        rerank_hits = co.rerank(query=query_text, documents=docs, top_n=3, model='rerank-multilingual-v2.0')
+        # handle return format. Can be found here: https://docs.cohere.com/reference/rerank-1
+        formatted_hits = [(Document(page_content=result.document['text']), result.relevance_score) for result in
+                          rerank_hits]
+        return formatted_hits
+
+    def __apply_relevance_threshold_method(self, results):
+        return [result for result in results if result[1] > self.relevance_threshold]
+
     def similarity_search(self, document_title, query_text):
         db = self.vector_data_manager.get_vectorstore(document_title)
         self.logger.debug(f"Conducting similarity search for {document_title} with following query: \n{query_text}.")
@@ -49,17 +64,3 @@ class SimilaritySearcher:
             self.logger.debug("Not applying relevance threshold.")
 
         return results
-
-    def __apply_reranking_method(self, results, query_text):
-        # TODO replace with actual API key
-        co = cohere.Client("Dz03PKYzHRwgvTgPWucDClzr2RylARxhmex7cGJ9")
-        # the content of results is docs
-        docs = [doc.page_content for doc, _score in results]
-        # TODO replace with actual model
-        rerank_hits = co.rerank(query=query_text, documents=docs, top_n=3, model='rerank-multilingual-v2.0')
-        # handle return format. Can be found here: https://docs.cohere.com/reference/rerank-1
-        formatted_hits = [(Document(page_content=result.document['text']), result.relevance_score) for result in rerank_hits]
-        return formatted_hits
-
-    def __apply_relevance_threshold_method(self, results):
-        return [result for result in results if result[1] > self.relevance_threshold]

@@ -3,6 +3,10 @@ import os
 import random
 
 from langchain.document_loaders import DirectoryLoader
+from langchain.schema import Document
+from langchain.text_splitter import NLTKTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores.chroma import Chroma
 
 from aisaac.aisaac.utils.logger import Logger
 
@@ -61,12 +65,6 @@ class DocumentManager:
         return data
 
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.text_splitter import NLTKTextSplitter
-from langchain.vectorstores.chroma import Chroma
-from langchain.schema import Document
-
-
 class VectorDataManager:
 
     def __init__(self, context_manager):
@@ -78,7 +76,8 @@ class VectorDataManager:
         self.document_data_manager = context_manager.get_document_data_manager()
         self.system_manager = context_manager.get_system_manager()
         self.result_manager = context_manager.get_results_saver()
-        self.chroma_path = self.system_manager.get_path("chroma")
+        self.chroma_path = context_manager.get_config('CHROMA_PATH')
+        self.full_chroma_path = self.system_manager.get_full_path(self.chroma_path)
         self.logger = Logger(__name__).get_logger()
 
         self.create_document_stores()
@@ -120,11 +119,11 @@ class VectorDataManager:
 
     def create_document_stores(self):
         self.result_manager.reset_results()
-        self.system_manager.reset_document_stores(self.chroma_path)
+        self.system_manager.reset_directory(self.full_chroma_path)
         data = self.document_data_manager.get_all_data()
         for document in data:
             title = os.path.splitext(os.path.basename(document.metadata["source"]))[0]
-            path = f"{self.chroma_path}/{title}"
+            path = f"{self.full_chroma_path}/{title}"
             # check if the document is already embedded
             if self.system_manager.path_exists(path):
                 self.logger.info(f"Document store for {title} already exists and was not reset.")
@@ -144,14 +143,14 @@ class VectorDataManager:
         self.logger.info("All document stores created.")
 
     def get_vectorstore(self, title: str):
-        path = f"{self.chroma_path}/{title}"
+        path = f"{self.full_chroma_path}/{title}"
         if not self.system_manager.path_exists(path):
             self.logger.error(f"Document store for {title} does not exist.")
             return None
         return Chroma(persist_directory=path, embdding_function=self.model_manager.get_embedding())
 
     def get_vectorstore_with_sigmoid_relevance_score_fn(self, title: str):
-        path = f"{self.chroma_path}/{title}"
+        path = f"{self.full_chroma_path}/{title}"
         if not self.system_manager.path_exists(path):
             self.logger.error(f"Document store for {title} does not exist.")
             return None
@@ -172,10 +171,10 @@ class VectorDataManager:
         vectorstores = self.get_vectorstores()
         vectorstore_baseline = Chroma(embedding_function=self.model_manager.get_embedding())
         for title in vectorstores:
-            db2_data = vectorstores[title]._collection.get(include=['documents', 'metadatas', 'embeddings'])
+            db2_data = vectorstores[title]._collection.get(include=['documents', 'metadata', 'embeddings'])
             vectorstore_baseline._collection.add(
                 embeddings=db2_data['embeddings'],
-                metadatas=db2_data['metadatas'],
+                metadatas=db2_data['metadata'],
                 documents=db2_data['documents'],
                 ids=db2_data['ids']
             )

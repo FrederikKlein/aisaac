@@ -34,4 +34,3 @@ class ContextManager:
     @classmethod
     def set_config(cls, key, value):
         cls._config[key] = value
-

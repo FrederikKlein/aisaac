@@ -41,7 +41,7 @@ class ResultSaver:
         self.write_csv(combined_data)
 
     @staticmethod
-    def __create_result_list(self, title):
+    def __create_result_list(title):
         temp_dict = [{
             "title": title,
             "converted": True,
