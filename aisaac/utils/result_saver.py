@@ -26,6 +26,13 @@ class ResultSaver:
             data = [row for row in reader]
         return data
 
+    def read_csv_to_dict_relevant_only(self, file_path):
+        with open(file_path, 'r') as file:
+            reader = csv.DictReader(file)
+            # from the csv file, we only need the title and the relevant column
+            data = {row['title']: row['relevant'] for row in reader}
+        return data
+
     def update_csv(self, updated_data):
         existing_data = self.read_csv_to_dict_list()
         # Find the matching title and update the data

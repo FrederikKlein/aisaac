@@ -30,11 +30,22 @@ class ContextManager:
         'LOGGING_LEVEL': "DEBUG",
         'PROGRESS_BAR': True,
         'RESET_RESULTS': True,
-        'CHECKPOINT_DICTIONARY': None,
+        'BASE_DIR': 'aisaac',
         'PROMPT_TEMPLATE': None,
         'QUESTION': None,
         'CSV_HEADER': ["title", "converted", "embedded", "relevant", "checkpoints", "reasoning"],
-        'BASE_DIR': 'aisaac',
+        'CHECKPOINT_DICTIONARY': {"Thyroid Cancer Types": "If the study involves any type of thyroid cancer such as "
+                                                          "Papillary TC, Follicular TC, Medullary TC, "
+                                                          "Poorly Differentiated TC, Anaplastic TC, Hurtle cell "
+                                                          "carcinoma, or Non-invasive follicular thyroid neoplasm "
+                                                          "with papillary-like nuclear features (NIFTP), then return "
+                                                          "True. However, If the study involves non-malignant "
+                                                          "entities or conditions other than the specified types of "
+                                                          "thyroid cancer, then return False.",
+
+                                  "Study Population": "If the study is conducted on human subjects, then return True. "
+                                                      "Otherwise, if the study is conducted on an organism different "
+                                                      "than human,  animals or uses cell lines,  return False."},
     }
 
     def __init__(self, config=None):
