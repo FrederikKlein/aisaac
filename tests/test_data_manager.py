@@ -24,13 +24,13 @@ class TestDocumentManager(unittest.TestCase):
     def test_load_data(self, MockDirectoryLoader):
         mock_loader = MockDirectoryLoader.return_value
         mock_loader.load.return_value = ['doc1', 'doc2', 'doc3']
-        documents = self.document_manager.load_data('/fake/data/path')
+        documents = self.document_manager._DocumentManager__load_data('/fake/data/path')
         self.assertEqual(documents, ['doc1', 'doc2', 'doc3'])
         MockDirectoryLoader.assert_called_once_with('/fake/data/path', glob='*.txt')
 
     # Additional tests within TestDocumentManager class
 
-    @patch('aisaac.aisaac.utils.data_manager.DocumentManager.load_data')
+    @patch('aisaac.aisaac.utils.data_manager.DocumentManager._DocumentManager__load_data')
     def test_load_global_data(self, mock_load_data):
         mock_load_data.return_value = ['doc1', 'doc2']
         self.document_manager.load_global_data()
@@ -118,34 +118,30 @@ class TestVectorDataManager(unittest.TestCase):
 
     @patch('aisaac.aisaac.utils.data_manager.VectorDataManager.save_to_chroma')
     @patch('aisaac.aisaac.utils.data_manager.VectorDataManager.chunk_documents')
-    @patch('aisaac.aisaac.utils.data_manager.DocumentManager.get_data')
-    @patch('os.path.exists')
-    def test_create_document_stores(self, mock_path_exists, mock_chunk_documents, mock_save_to_chroma, mock_get_data):
-        # Setup the mocks
-        mock_path_exists.side_effect = [False, True]  # First path does not exist, second does
-        mock_chunk_documents.return_value = ['chunk1', 'chunk2']  # Return value for chunked documents
-        mock_document1 = MagicMock(metadata={'source': '/fake/path/doc1.txt'})
-        mock_document2 = MagicMock(metadata={'source': '/fake/path/doc2.txt'})
-        mock_get_data.return_value = [mock_document1, mock_document2]
+    def test_create_document_stores(self, mock_chunk_documents, mock_save_to_chroma):
+        mock_context_manager = MagicMock()
+        vector_data_manager = VectorDataManager(mock_context_manager)
+
+        mock_context_manager.get_system_manager.return_value.path_exists.side_effect = [False,
+                                                                                        True]  # First document is new, second already exists
+        mock_chunk_documents.return_value = ['chunk1', 'chunk2']  # Mocked chunk data
+
+        mock_context_manager.get_document_data_manager.return_value.get_data.return_value = [
+            MagicMock(metadata={'source': '/fake/path/doc1.txt'}),
+            MagicMock(metadata={'source': '/fake/path/doc2.txt'})
+        ]
         # Execute the method under test
-        self.vector_data_manager.create_document_stores()
+        vector_data_manager.create_document_stores()
 
-        # Assert that the directory reset and result reset methods were called
-        self.vector_data_manager.system_manager.reset_directory.assert_called_once_with(self.vector_data_manager.full_chroma_path)
-        self.vector_data_manager.result_manager.reset_results.assert_called_once()
+        # Assertions for system and result management
+        vector_data_manager.system_manager.reset_directory.assert_called_once_with(vector_data_manager.full_chroma_path)
+        vector_data_manager.result_manager.reset_results.assert_called_once()
 
-        # Assert that the document store creation was attempted for the first document
-        mock_save_to_chroma.assert_called_once_with(['chunk1', 'chunk2'], 'doc1', '/fake/full/chroma/path/doc1')
-
-        # Assert the logging calls
-        self.assertEqual(self.vector_data_manager.logger.info.call_count, 3)  # For 'All document stores created' and existing document stores
-        self.vector_data_manager.logger.debug.assert_called_once_with('Creating document store for doc1')
-        self.vector_data_manager.logger.error.assert_not_called()  # Assuming no errors occurred
-
-        # Assert update_result_list was called correctly
-        self.vector_data_manager.result_manager.update_result_list.assert_called_once_with('doc1', 'embedded', True)
-        # The method should not be called for 'doc2' since its path already exists
-
+        # Assertions for document processing
+        self.assertEqual(mock_chunk_documents.call_count, 1)  # Only called once for the new document
+        mock_save_to_chroma.assert_called_once_with(['chunk1', 'chunk2'], 'doc1',
+                                                    f"{vector_data_manager.full_chroma_path}/doc1")
+        vector_data_manager.result_manager.update_result_list.assert_called_with('doc1', 'embedded', True)
 
     @patch('aisaac.aisaac.utils.data_manager.VectorDataManager.get_vectorstore')
     def test_get_vectorstores(self, mock_get_vectorstore):

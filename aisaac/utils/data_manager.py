@@ -50,7 +50,7 @@ class DocumentManager:
 
     def get_data(self):
         return_data = []
-        self.update_global_data()
+        # self.update_global_data()
         len_data_sets = len(self.data_paths)
         if self.random_subset:
             for data_set in self.global_data:
@@ -163,10 +163,11 @@ class VectorDataManager:
             self.result_manager.create_new_result_entry(title)
 
             try:
-                self.save_to_chroma(self.chunk_documents([document]), title, path)
+                chunks = self.chunk_documents([document])
+                self.save_to_chroma(chunks, title, path)
                 self.result_manager.update_result_list(title, "embedded", True)
                 self.logger.info(f"Created document store for {title}.")
-            except:
+            except Exception as e:
                 self.result_manager.update_result_list(title, "embedded", False)
                 self.logger.error(f"Embedding failed for {title}.")
 
