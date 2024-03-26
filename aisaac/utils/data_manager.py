@@ -21,7 +21,7 @@ class DocumentManager:
         self.global_data = []
         self.logger = Logger(__name__).get_logger()
 
-    def load_data(self, path):
+    def __load_data(self, path):
         loader = DirectoryLoader(path, glob=self.data_format)
         documents = loader.load()
         return documents
@@ -29,11 +29,28 @@ class DocumentManager:
     def load_global_data(self):
         for data_path in self.data_paths:
             self.logger.info(f"Loading data from {data_path}.")
-            data = self.load_data(data_path)
+            data = self.__load_data(data_path)
+            self.global_data.append(data)
+
+    def update_global_data(self):
+        # remove any data from global data that isn't in the data paths
+        for data_set in self.global_data:
+            for data in data_set:
+                if all(data.metadata["source"] not in data_path for data_path in self.data_paths):
+                    self.global_data.remove(data_set)
+                    break
+        for data_path in self.data_paths:
+            # check if the data is already in the global data
+            if any(data_path in data.metadata["source"] for data in self.global_data):
+                self.logger.info(f"Data from {data_path} already loaded.")
+                continue
+            self.logger.info(f"Loading data from {data_path}.")
+            data = self.__load_data(data_path)
             self.global_data.append(data)
 
     def get_data(self):
         return_data = []
+        self.update_global_data()
         len_data_sets = len(self.data_paths)
         if self.random_subset:
             for data_set in self.global_data:
@@ -43,6 +60,21 @@ class DocumentManager:
             for data_set in self.global_data:
                 return_data.extend(data_set)
         return return_data
+
+    def get_all_titles(self):
+        return_titles = []
+        for data_path in self.data_paths:
+            # get title from data_path
+            title = os.path.basename(data_path)
+            return_titles.append(title)
+        return return_titles
+
+    def get_runnable_titles(self):
+        global_titles = self.get_all_titles()
+        for title in global_titles:
+            if not os.path.exists(f"{self.chroma_path}/{title}"):
+                self.logger.debug(f"Document store for {title} does not exist.")
+                global_titles.remove(title)
 
     def __get_all_data(self):
         return_data = []
