@@ -55,6 +55,7 @@ class ContextManager:
         """
         return self._config.get(key)
 
+    # this might have to be deleted in order to avoid logic issues
     def set_config(self, key, value):
         """
         Set a configuration value.

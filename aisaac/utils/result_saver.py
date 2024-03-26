@@ -87,4 +87,8 @@ class ResultSaver:
                 result_list[0].update({"embedded": True})
             self.add_data_csv(result_list)
 
+    def save_response(self, response):
+        pass
+
+
 #%%
