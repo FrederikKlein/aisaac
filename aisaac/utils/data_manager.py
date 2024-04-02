@@ -82,7 +82,7 @@ class DocumentManager:
 
     def get_runnable_titles(self):
         global_titles = self.get_all_titles()
-        for title in global_titles:
+        for title in global_titles[:]:
             if not os.path.exists(f"{self.chroma_path}/{title}"):
                 self.logger.debug(f"Document store for {title} does not exist.")
                 global_titles.remove(title)
