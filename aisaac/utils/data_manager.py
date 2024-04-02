@@ -38,7 +38,7 @@ class DocumentManager:
             # loop over all documents in data_path
             for document_path in os.listdir(data_path):
                 self.logger.info(f"Loading data from {document_path}.")
-                data = self.__load_data(document_path)
+                data = self.__load_data(f"{data_path}/{document_path}")
                 self.global_data.append(data)
 
     def update_global_data(self):
@@ -50,12 +50,11 @@ class DocumentManager:
                     break
         for data_path in self.data_paths:
             for document_path in os.listdir(data_path):
-                # check if the data is already in the global data
-                if any(document_path in data.metadata["source"] for data in self.global_data):
-                    self.logger.info(f"Data from {document_path} already loaded.")
-                    continue
-                self.logger.info(f"Loading data from {document_path}.")
-                data = self.__load_data(document_path)
+                relative_document_path = f"{data_path}/{document_path}"
+                # TODO check if the data is already in the global data
+
+                self.logger.info(f"Loading data from {relative_document_path}.")
+                data = self.__load_data(relative_document_path)
                 self.global_data.append(data)
 
     def get_data(self):
