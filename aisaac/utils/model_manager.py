@@ -13,13 +13,15 @@ from aisaac.aisaac.utils.logger import Logger
 class ModelManager:
     def __init__(self, context_manager):
         self.context_manager = context_manager
-        self.use_local_models = self.context_manager.get_config('LOCAL_MODELS') == 'True'
+        self.use_local_models = self.context_manager.get_config('LOCAL_MODELS')
         self.model_client_url = self.context_manager.get_config('MODEL_CLIENT_URL')
         self.embedding_model_id = self.context_manager.get_config('EMBEDDING_MODEL')
         self.rag_model_id = self.context_manager.get_config('RAG_MODEL')
         self.my_chat_model, self.embedding, self.model_uids = None, None, None
-        self.__set_up_models()
         self.logger = Logger(__name__).get_logger()
+
+        self.__set_up_models()
+
 
     def __set_up_embedding(self):
         if self.use_local_models:
