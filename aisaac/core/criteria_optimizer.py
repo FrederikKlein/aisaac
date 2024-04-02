@@ -1,13 +1,15 @@
 from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 from langchain_core.prompts import ChatPromptTemplate
 
+from aisaac.aisaac.utils import Logger
+
 
 class CriteriaOptimizer:
     def __init__(self, context_manager):
-        self.logger = context_manager.get_logger(__name__)
+        self.logger = Logger(__name__).get_logger()
         self.result_saver = context_manager.get_result_saver()
         self.mm = context_manager.get_model_manager()
-        self.dm = context_manager.get_document_manager()
+        self.dm = context_manager.get_document_data_manager()
         self.similarity_searcher = context_manager.get_similarity_searcher()
         self.feature_importance_threshold = float(context_manager.get_config('FEATURE_IMPORTANCE_THRESHOLD'))
         self.max_documents = int(context_manager.get_config('MAX_FEATURE_IMPROVEMENT_DOCUMENTS'))

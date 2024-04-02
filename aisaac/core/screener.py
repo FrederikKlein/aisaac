@@ -8,7 +8,7 @@ class Screener:
     def __init__(self, context_manager):
         self.result_saver = context_manager.get_result_saver()
         self.mm = context_manager.get_model_manager()
-        self.dm = context_manager.get_document_manager()
+        self.dm = context_manager.get_document_data_manager()
         self.similarity_searcher = context_manager.get_similarity_searcher()
         self.prompt_template = """
         [INST]

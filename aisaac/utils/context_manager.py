@@ -48,6 +48,7 @@ class ContextManager:
                                                       "than human,  animals or uses cell lines,  return False."},
         'FEATURE_IMPORTANCE_THRESHOLD': 0.1,
         'MAX_FEATURE_IMPROVEMENT_DOCUMENTS': 20,
+        'NUMBER_EXPERT_CHOICES': 3,
         'IMPORTANCE_GREATER_THAN_THRESHOLD': True,
     }
 
@@ -85,7 +86,7 @@ class ContextManager:
         """
         return VectorDataManager(self)
 
-    def get_document_manager(self):
+    def get_document_data_manager(self):
         """
         Get an instance of DocumentManager for this context.
         """
@@ -121,3 +122,5 @@ class ContextManager:
         """
         return Logger(__name__, self)
 
+
+#%%

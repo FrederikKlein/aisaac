@@ -68,6 +68,15 @@ class SystemManager:
         """
         return os.path.join(self.base_directory, relative_path)
 
+    def get_full_paths(self, relative_paths: list[str]) -> list[str]:
+        """
+        Get the full paths for a list of relative paths from the base directory.
+
+        :param relative_paths: The list of relative paths from the base directory.
+        :return: The list of full paths.
+        """
+        return [self.get_full_path(relative_path) for relative_path in relative_paths]
+
     def delete_file(self, relative_path: str):
         """
         Delete a file relative to the base directory.

@@ -7,30 +7,39 @@ from langchain.schema import Document
 from langchain.text_splitter import NLTKTextSplitter
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores.chroma import Chroma
+from langchain_community.document_loaders import PyPDFLoader
 
 from aisaac.aisaac.utils.logger import Logger
 
 
 class DocumentManager:
     def __init__(self, context_manager):
-        self.data_paths = context_manager.get_config('DATA_PATHS')
+        self.system_manager = context_manager.get_system_manager()
+        relative_data_paths = context_manager.get_config('DATA_PATHS')
+        self.data_paths = self.system_manager.get_full_paths(relative_data_paths)
         self.data_format = context_manager.get_config('DATA_FORMAT')
         self.random_subset = context_manager.get_config('RANDOM_SUBSET') == 'True'
         self.subset_size = int(context_manager.get_config('SUBSET_SIZE'))
-        self.chroma_path = context_manager.get_config('CHROMA_PATH')
+        chroma_path = context_manager.get_config('CHROMA_PATH')
+        self.chroma_path = self.system_manager.get_full_path(chroma_path)
         self.global_data = []
         self.logger = Logger(__name__).get_logger()
 
     def __load_data(self, path):
-        loader = DirectoryLoader(path, glob=self.data_format)
+        if self.data_format == '*.pdf':
+            loader = PyPDFLoader(path)
+        else:
+            loader = DirectoryLoader(path, glob=self.data_format)
         documents = loader.load()
         return documents
 
     def load_global_data(self):
         for data_path in self.data_paths:
-            self.logger.info(f"Loading data from {data_path}.")
-            data = self.__load_data(data_path)
-            self.global_data.append(data)
+            # loop over all documents in data_path
+            for document_path in os.listdir(data_path):
+                self.logger.info(f"Loading data from {document_path}.")
+                data = self.__load_data(document_path)
+                self.global_data.append(data)
 
     def update_global_data(self):
         # remove any data from global data that isn't in the data paths
@@ -40,13 +49,14 @@ class DocumentManager:
                     self.global_data.remove(data_set)
                     break
         for data_path in self.data_paths:
-            # check if the data is already in the global data
-            if any(data_path in data.metadata["source"] for data in self.global_data):
-                self.logger.info(f"Data from {data_path} already loaded.")
-                continue
-            self.logger.info(f"Loading data from {data_path}.")
-            data = self.__load_data(data_path)
-            self.global_data.append(data)
+            for document_path in os.listdir(data_path):
+                # check if the data is already in the global data
+                if any(document_path in data.metadata["source"] for data in self.global_data):
+                    self.logger.info(f"Data from {document_path} already loaded.")
+                    continue
+                self.logger.info(f"Loading data from {document_path}.")
+                data = self.__load_data(document_path)
+                self.global_data.append(data)
 
     def get_data(self):
         return_data = []
@@ -64,9 +74,10 @@ class DocumentManager:
     def get_all_titles(self):
         return_titles = []
         for data_path in self.data_paths:
-            # get title from data_path
-            title = os.path.basename(data_path)
-            return_titles.append(title)
+            for document_path in os.listdir(data_path):
+                # get title from data_path
+                title = os.path.basename(document_path)
+                return_titles.append(title)
         return return_titles
 
     def get_runnable_titles(self):
@@ -75,6 +86,9 @@ class DocumentManager:
             if not os.path.exists(f"{self.chroma_path}/{title}"):
                 self.logger.debug(f"Document store for {title} does not exist.")
                 global_titles.remove(title)
+            else:
+                self.logger.debug(f"Document store for {title} exists.")
+        return global_titles
 
     def __get_all_data(self):
         return_data = []
@@ -107,7 +121,7 @@ class VectorDataManager:
         self.model_manager = context_manager.get_model_manager()
         self.document_data_manager = context_manager.get_document_data_manager()
         self.system_manager = context_manager.get_system_manager()
-        self.result_manager = context_manager.get_results_saver()
+        self.result_manager = context_manager.get_result_saver()
         self.chroma_path = context_manager.get_config('CHROMA_PATH')
         self.full_chroma_path = self.system_manager.get_full_path(self.chroma_path)
         self.logger = Logger(__name__).get_logger()

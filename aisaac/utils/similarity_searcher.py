@@ -14,7 +14,7 @@ class SimilaritySearcher:
         self.vector_data_manager = context_manager.get_vector_data_manager()
         self.logger = Logger(__name__).get_logger()
         self.similarity_search_k = int(context_manager.get_config('SIMILARITY_SEARCH_K'))
-        self.relevance_threshold = float(context_manager.get_config('RELEVANCE_THRESHOLD'))
+        self.relevance_threshold = float(context_manager.get_config('RELEVANCE_THRESHOLD_CUTOFF'))
         self.apply_reranking = context_manager.get_config('RERANKING') == 'True'
         self.apply_relevance_threshold = context_manager.get_config('RELEVANCE_THRESHOLD') == 'True'
 

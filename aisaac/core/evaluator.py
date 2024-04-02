@@ -10,7 +10,7 @@ from aisaac.aisaac.utils import Logger
 class Evaluator:
     def __init__(self, context_manager):
         self.system_manager = context_manager.get_system_manager()
-        self.checkpoint_keys = list(context_manager.get_config('CHECKPOINT_DICT').keys())
+        self.checkpoint_keys = list(context_manager.get_config('CHECKPOINT_DICTIONARY').keys())
         self.full_result_path = self.system_manager.get_full_path(
             f"{context_manager.get_config('RESULT_PATH')}/{context_manager.get_config('RESULT_FILE')}")
         self.full_original_result_path = self.system_manager.get_full_path(
