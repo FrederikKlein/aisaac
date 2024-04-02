@@ -43,7 +43,7 @@ class Evaluator:
                         tn += 1
         return tp, tn, fp, fn
 
-    def calculate_mcc(tp, tn, fp, fn):
+    def calculate_mcc(self, tp, tn, fp, fn):
         # to all variables, add one so that we don't get a 0-division error
         tp += 1
         tn += 1
