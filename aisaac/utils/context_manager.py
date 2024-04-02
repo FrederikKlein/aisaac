@@ -46,6 +46,9 @@ class ContextManager:
                                   "Study Population": "If the study is conducted on human subjects, then return True. "
                                                       "Otherwise, if the study is conducted on an organism different "
                                                       "than human,  animals or uses cell lines,  return False."},
+        'FEATURE_IMPORTANCE_THRESHOLD': 0.1,
+        'MAX_FEATURE_IMPROVEMENT_DOCUMENTS': 20,
+        'IMPORTANCE_GREATER_THAN_THRESHOLD': True,
     }
 
     def __init__(self, config=None):
