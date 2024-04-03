@@ -235,7 +235,7 @@ class VectorDataManager:
         self.system_manager.reset_directory(self.chroma_path)
         data = self.document_data_manager.get_data()
         for document in data:
-            title = os.path.splitext(os.path.basename(document.metadata["source"]))[0]
+            title = self.system_manager.get_title_without_extension(document.metadata["source"])
             path = f"{self.chroma_path}/{title}"
             # check if the document is already embedded
             if self.system_manager.path_exists(path):
@@ -244,6 +244,7 @@ class VectorDataManager:
 
             self.logger.debug(f"Creating document store for {title}.")
             self.result_manager.create_new_result_entry(title)
+            self.result_manager.update_result_list(title, "converted", True)
 
             try:
                 chunks = self.chunk_documents([document])

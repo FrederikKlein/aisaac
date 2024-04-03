@@ -15,9 +15,10 @@ class ResultSaver:
         self.reset_results_bool = context_manager.get_config('RESET_RESULTS') == 'True'
         if self.reset_results_bool:
             self.reset_results()
+        self.document_data_manager = context_manager.get_document_data_manager()
         if not self.system_manager.path_exists(f"{self.result_path}/{self.result_file}"):
             self.set_up_new_results_file(f"{self.result_path}/{self.result_file}",
-                                         context_manager.get_document_data_manager().get_all_titles())
+                                         self.document_data_manager.get_all_titles())
 
     def write_csv(self, data):
         with open(self.full_result_file_path, 'w', newline='') as csv_file:
@@ -63,7 +64,7 @@ class ResultSaver:
     def __create_result_list(title):
         temp_dict = [{
             "title": title,
-            "converted": True,
+            "converted": False,
             "embedded": False,
             "relevant": None,
             "checkpoints": {},
@@ -96,13 +97,16 @@ class ResultSaver:
         self.write_csv([])
 
     def set_up_new_results_file(self, new_relative_file_path, all_titles):
+        converted_titles = self.document_data_manager.get_converted_titles()
         # Reset the file
         self.full_result_file_path = self.system_manager.get_full_path(
             new_relative_file_path)  # Update the file path for new results
         self.write_csv([])  # Create new file with empty data
         for title in all_titles:
-            title_without_extension = os.path.splitext(os.path.basename(title))[0]
+            title_without_extension = self.system_manager.get_title_without_extension(title)
             result_list = self.__create_result_list(title_without_extension)
+            if title_without_extension in converted_titles:
+                result_list[0].update({"converted": True})
             if os.path.exists(os.path.join(self.full_chroma_path, title_without_extension)):
                 result_list[0].update({"embedded": True})
             self.add_data_csv(result_list)
