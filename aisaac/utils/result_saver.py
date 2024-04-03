@@ -46,6 +46,13 @@ class ResultSaver:
                     existing_row.update(updated_row)
         self.write_csv(existing_data)
 
+    def update_result_list(self, title, key, value):
+        existing_data = self.read_csv_to_dict_list()
+        for existing_row in existing_data:
+            if existing_row['title'] == title:
+                existing_row[key] = value
+        self.write_csv(existing_data)
+
     def add_data_csv(self, new_data):
         existing_data = self.read_csv_to_dict_list()
         combined_data = existing_data + new_data
@@ -99,6 +106,7 @@ class ResultSaver:
             self.add_data_csv(result_list)
 
     def save_response(self, response):
+        #TODO: Implement this method
         pass
 
 
