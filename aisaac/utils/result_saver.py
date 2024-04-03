@@ -7,6 +7,11 @@ class ResultSaver:
         self.context_manager = context_manager
         self.result_path = self.context_manager.get_config('RESULT_PATH')
         self.result_file = self.context_manager.get_config('RESULT_FILE')
+        self.system_manager = context_manager.get_system_manager()
+        self.full_result_path = self.system_manager.get_full_path(
+            f"{self.result_path}/{self.result_file}")
+        self.result_path = self.system_manager.get_full_path(self.result_path)
+        self.system_manager.make_directory(self.result_path)
         self.output_file_path = os.path.join(self.result_path, self.result_file)
         self.csv_headers = ['title', 'converted', 'embedded', 'relevant', 'checkpoints', 'reasoning']
         self.chroma_path = self.context_manager.get_config('CHROMA_PATH')

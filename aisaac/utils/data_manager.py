@@ -22,8 +22,8 @@ class DocumentManager:
         self.data_format = context_manager.get_config('DATA_FORMAT')
         self.random_subset = context_manager.get_config('RANDOM_SUBSET') == 'True'
         self.subset_size = int(context_manager.get_config('SUBSET_SIZE'))
-        chroma_path = context_manager.get_config('CHROMA_PATH')
-        self.chroma_path = self.system_manager.get_full_path(chroma_path)
+        self.chroma_path = context_manager.get_config('CHROMA_PATH')
+        self.full_chroma_path = self.system_manager.get_full_path(self.chroma_path)
         self.global_data = []
         self.logger = Logger(__name__).get_logger()
 
@@ -89,7 +89,7 @@ class DocumentManager:
     def get_runnable_titles(self):
         global_titles = self.get_all_titles()
         for title in global_titles[:]:
-            if not os.path.exists(f"{self.chroma_path}/{title}"):
+            if not os.path.exists(f"{self.full_chroma_path}/{title}"):
                 self.logger.debug(f"Document store for {title} does not exist.")
                 global_titles.remove(title)
             else:
@@ -106,7 +106,7 @@ class DocumentManager:
         data = self.__get_all_data()
         for document in data[:]:
             title = os.path.splitext(os.path.basename(document.metadata["source"]))[0]
-            if not os.path.exists(f"{self.chroma_path}/{title}"):
+            if not os.path.exists(f"{self.full_chroma_path}/{title}"):
                 self.logger.debug(f"Document store for {title} does not exist.")
                 data.remove(document)
         if self.random_subset:
@@ -202,7 +202,7 @@ class VectorDataManager:
 
     def create_document_stores(self):
         self.result_manager.reset_results()
-        self.system_manager.reset_directory(self.full_chroma_path)
+        self.system_manager.reset_directory(self.chroma_path)
         data = self.document_data_manager.get_data()
         for document in data:
             title = os.path.splitext(os.path.basename(document.metadata["source"]))[0]

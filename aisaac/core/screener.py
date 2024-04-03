@@ -9,6 +9,7 @@ class Screener:
         self.result_saver = context_manager.get_result_saver()
         self.mm = context_manager.get_model_manager()
         self.dm = context_manager.get_document_data_manager()
+        self.checkpoints = context_manager.get_config('CHECKPOINT_DICTIONARY')
         self.similarity_searcher = context_manager.get_similarity_searcher()
         self.prompt_template = """
         [INST]
@@ -27,7 +28,9 @@ class Screener:
         self.question = "Which of the checkpoints are true for this document and why?"
         self.logger = Logger(__name__).get_logger()
 
-    def do_screening(self, checkpoints):
+    def do_screening(self, checkpoints=None):
+        if checkpoints is None:
+            checkpoints = self.checkpoints
         titles = self.dm.get_runnable_titles()
         # progress variables
         iterations = len(titles)
