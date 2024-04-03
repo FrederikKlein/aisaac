@@ -15,62 +15,60 @@ class CriteriaOptimizer:
         self.max_documents = int(context_manager.get_config('MAX_FEATURE_IMPROVEMENT_DOCUMENTS'))
         self.importance_greater_than_threshold = context_manager.get_config('IMPORTANCE_GREATER_THAN_THRESHOLD')
         self.number_expert_choices = int(context_manager.get_config('NUMBER_EXPERT_CHOICES'))
+        self.checkpoint_dictionary = context_manager.get_config('CHECKPOINT_DICTIONARY')
+        self.checkpoint_keys = list(self.checkpoint_dictionary.keys())
 
     # This function is a simple way to improve the feature importance of a model. The importance_threshold is strictly
     # greater than or strictly less than, depending on the importance_greater_than_threshold parameter
-    def automated_feature_improvement(self, checkpoint_dictionary, checkpoint_importances):
-        checkpoint_keys = list(checkpoint_dictionary.keys())
+    def automated_feature_improvement(self, checkpoint_importances):
         for i, importance in enumerate(checkpoint_importances):
             if (importance > self.feature_importance_threshold) == self.importance_greater_than_threshold:
-                current_checkpoint = checkpoint_dictionary[checkpoint_keys[i]]
+                current_checkpoint = self.checkpoint_dictionary[self.checkpoint_keys[i]]
                 new_checkpoint = self.__generate_new_checkpoints(current_checkpoint, k=1)[0]
                 self.logger.debug(f"Old checkpoint: {current_checkpoint}")
                 self.logger.debug(f"New checkpoint: {new_checkpoint}")
-                checkpoint_dictionary[checkpoint_keys[i]] = new_checkpoint
-        return checkpoint_dictionary
+                self.checkpoint_dictionary[self.checkpoint_keys[i]] = new_checkpoint
+        return self.checkpoint_dictionary
 
     # This function generates more than one possible new checkpoint and asks the expert to choose one
     # It also allows for annotations from the expert, which might come in handy
-    def expert_feature_improvement(self, checkpoint_dictionary, checkpoint_importances, annotations=None):
-        checkpoint_keys = list(checkpoint_dictionary.keys())
+    def expert_feature_improvement(self, checkpoint_importances, annotations=None):
         for i, importance in enumerate(checkpoint_importances):
             if (importance > self.feature_importance_threshold) == self.importance_greater_than_threshold:
-                new_checkpoints = self.__expert_feature_improvement(checkpoint_dictionary[checkpoint_keys[i]],
+                new_checkpoints = self.__expert_feature_improvement(self.checkpoint_dictionary[self.checkpoint_keys[i]],
                                                                     notes=annotations)
-                checkpoint_dictionary[checkpoint_keys[i]] = self.__ask_for_expert_choice(new_checkpoints)
-        return checkpoint_dictionary
+                self.checkpoint_dictionary[self.checkpoint_keys[i]] = self.__ask_for_expert_choice(new_checkpoints)
+        return self.checkpoint_dictionary
 
     # This function generates more than one possible new checkpoint based on the context of the current checkpoint
     # An LLM will decide which of the new checkpoints is the best one or averages one
-    def context_aware_feature_improvement(self, checkpoint_dictionary, checkpoint_importances):
-        checkpoint_keys = list(checkpoint_dictionary.keys())
+    def context_aware_feature_improvement(self, checkpoint_importances):
         for i, importance in enumerate(checkpoint_importances):
             if (importance > self.feature_importance_threshold) == self.importance_greater_than_threshold:
-                current_checkpoint = checkpoint_dictionary[checkpoint_keys[i]]
+                current_checkpoint = self.checkpoint_dictionary[self.checkpoint_keys[i]]
                 potential_checkpoints = []
                 titles_with_limit = self.__get_runnable_title_with_limit()
                 for title in titles_with_limit:
                     context_text = self.similarity_searcher.similarity_search(title, current_checkpoint)
-                    checkpoint_candidate = self.__generate_improved_checkpoints(current_checkpoint, context_text)
+                    checkpoint_candidate = self.__generate_improved_checkpoints(current_checkpoint, context_text, None)
                     self.logger.debug(f"Potential new checkpoint: {checkpoint_candidate}")
                     potential_checkpoints.append(checkpoint_candidate)
-                checkpoint_dictionary[checkpoint_keys[i]] = self.__average_checkpoints(potential_checkpoints)
-        return checkpoint_dictionary
+                self.checkpoint_dictionary[self.checkpoint_keys[i]] = self.__average_checkpoints(potential_checkpoints)
+        return self.checkpoint_dictionary
 
     # The most advanced feature improvement method
     # We ask an LLM to return an improved checkpoint based on the context of the current checkpoint, the expert's notes and the most important text chunks for every document that the expert has labeled. Based on the returned checkpoints, the LLM creates a new one, which is then presented to the expert for approval. Wo do that for every checkpoint that has an importance greater than the threshold
-    def advanced_feature_improvement(self, annotations, checkpoint_dictionary, checkpoint_importances):
-        checkpoint_keys = list(checkpoint_dictionary.keys())
+    def advanced_feature_improvement(self, annotations, checkpoint_importances):
 
         # for every important checkpoint do:
         # for every document (maxed) get the context text and generate improved checkpoints
         # get expert choice or get LLM choice
         # return the improved checkpoints
 
-        checkpoint_keys = list(checkpoint_dictionary.keys())
+        checkpoint_keys = list(self.checkpoint_dictionary.keys())
         for i, importance in enumerate(checkpoint_importances):
             if (importance > self.feature_importance_threshold) == self.importance_greater_than_threshold:
-                current_checkpoint = checkpoint_dictionary[checkpoint_keys[i]]
+                current_checkpoint = self.checkpoint_dictionary[checkpoint_keys[i]]
                 potential_checkpoints = []
                 titles_with_limit = self.__get_runnable_title_with_limit()
                 for title in titles_with_limit:
@@ -87,8 +85,8 @@ class CriteriaOptimizer:
                 # loop k times
                 for i in range(self.number_expert_choices):
                     expert_presentable_checkpoints.append(self.__average_checkpoints(potential_checkpoint_groups[i]))
-                checkpoint_dictionary[checkpoint_keys[i]] = self.__ask_for_expert_choice(expert_presentable_checkpoints)
-        return checkpoint_dictionary
+                self.checkpoint_dictionary[checkpoint_keys[i]] = self.__ask_for_expert_choice(expert_presentable_checkpoints)
+        return self.checkpoint_dictionary
 
     def __ask_for_expert_choice(self, new_checkpoints):
         while True:
@@ -104,7 +102,7 @@ class CriteriaOptimizer:
             except ValueError:
                 print("Please enter a valid number.")
 
-        print(f"You chose checkpoint {choice}: {new_checkpoints[choice - 1]}")
+        print(f"You chose criterion {choice}: {new_checkpoints[choice - 1]}")
         return new_checkpoints[choice - 1]
 
     def check_propositions(self, current_checkpoint, new_checkpoints):
@@ -151,7 +149,7 @@ class CriteriaOptimizer:
         
         {context}
         
-        With the following checkpoint: {checkpoint}
+        With the following criterion: {checkpoint}
         
         And the following expert annotations: {annotations}
         
@@ -161,7 +159,7 @@ class CriteriaOptimizer:
         {format_instructions}
         [/INST]
         """
-        question = "What is a better checkpoint?"
+        question = "What is a better criterion?"
 
         output_parser = self.__get_output_parser()
         format_instructions = output_parser.get_format_instructions()
@@ -185,8 +183,8 @@ class CriteriaOptimizer:
     def __generate_improved_checkpoint_without_context(self, current_checkpoint, annotations):
         prompt_text_template = """
         [INST]
-        A checkpoint is a string describing the criteria for including or excluding a piece of data in a dataset.
-        Here is a suboptimal checkpoint:
+        A criterion is a string describing indicators for including or excluding a piece of data in a dataset.
+        Here is a suboptimal criterion:
         
         {checkpoint}
         
@@ -220,9 +218,9 @@ class CriteriaOptimizer:
     def __average_checkpoints(self, checkpoints):
         prompt_text_template = """
         [INST]
-        A checkpoint is a string describing the criteria for including or excluding a piece of data in a dataset.
-        Here is a list of checkpoints that might be a better for the problem at hand. 
-        Create the best checkpoint based on the following checkpoints: 
+        A criterion is a string describing indicators for including or excluding a piece of data in a dataset.
+        Here is a list of criteria that might be a better for the problem at hand. 
+        Create the best criterion based on the following criteria: 
         {checkpoints}
         
         {format_instructions}
@@ -257,7 +255,7 @@ class CriteriaOptimizer:
 
     def __get_output_parser(self):
         response_schemas = [
-            ResponseSchema(name="improved checkpoint", description="The description of the checkpoint", type="string"),
+            ResponseSchema(name="improved criterion", description="The improved criterion in plain text", type="string"),
         ]
         return StructuredOutputParser.from_response_schemas(response_schemas)
 
