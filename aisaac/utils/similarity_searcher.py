@@ -9,7 +9,6 @@ from aisaac.aisaac.utils.logger import Logger
 class SimilaritySearcher:
     def __init__(self, context_manager):
         # Fetch all necessary configurations from the context manager
-        self.context_manager = context_manager
         self.system_manager = context_manager.get_system_manager()
         self.vector_data_manager = context_manager.get_vector_data_manager()
         self.logger = Logger(__name__).get_logger()

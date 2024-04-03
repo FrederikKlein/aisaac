@@ -12,7 +12,6 @@ from aisaac.aisaac.utils.logger import Logger
 
 class ModelManager:
     def __init__(self, context_manager):
-        self.context_manager = context_manager
         self.use_local_models = str(context_manager.get_config('LOCAL_MODELS')).lower() == 'true'
         self.model_client_url = context_manager.get_config('MODEL_CLIENT_URL')
         self.embedding_model_id = context_manager.get_config('EMBEDDING_MODEL')

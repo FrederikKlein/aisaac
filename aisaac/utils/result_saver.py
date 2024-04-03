@@ -4,9 +4,8 @@ import os
 
 class ResultSaver:
     def __init__(self, context_manager):
-        self.context_manager = context_manager
-        self.result_path = self.context_manager.get_config('RESULT_PATH')
-        self.result_file = self.context_manager.get_config('RESULT_FILE')
+        self.result_path = context_manager.get_config('RESULT_PATH')
+        self.result_file = context_manager.get_config('RESULT_FILE')
         self.system_manager = context_manager.get_system_manager()
         self.full_result_path = self.system_manager.get_full_path(
             f"{self.result_path}/{self.result_file}")
@@ -14,8 +13,8 @@ class ResultSaver:
         self.system_manager.make_directory(self.result_path)
         self.output_file_path = os.path.join(self.result_path, self.result_file)
         self.csv_headers = ['title', 'converted', 'embedded', 'relevant', 'checkpoints', 'reasoning']
-        self.chroma_path = self.context_manager.get_config('CHROMA_PATH')
-        self.reset_results_bool = self.context_manager.get_config('RESET_RESULTS') == 'True'
+        self.chroma_path = context_manager.get_config('CHROMA_PATH')
+        self.reset_results_bool = context_manager.get_config('RESET_RESULTS') == 'True'
         if self.reset_results_bool:
             self.reset_results()
 
@@ -94,7 +93,7 @@ class ResultSaver:
         self.write_csv([])  # Create new file with empty data
         for entry in data_entries:
             title = os.path.splitext(os.path.basename(entry.metadata["source"]))[0]
-            result_list = self.create_result_list(title)
+            result_list = self.__create_result_list(title)
             if os.path.exists(os.path.join(self.chroma_path, title)):
                 result_list[0].update({"embedded": True})
             self.add_data_csv(result_list)

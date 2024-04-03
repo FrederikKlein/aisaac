@@ -143,11 +143,10 @@ class DocumentManager:
 
         combined_metadata = documents[0].metadata
 
-        #remove the metadata [page] from the combined metadata, keeping the rest of it
+        # remove the metadata [page] from the combined metadata, keeping the rest of it
         combined_metadata.pop('page', None)
         combined_document = [Document(page_content=combined_content, metadata=combined_metadata)]
         return combined_document
-
 
 
 class VectorDataManager:
