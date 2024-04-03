@@ -213,12 +213,13 @@ class VectorDataManager:
         self.logger.info(f"Chunked {len(documents)} documents into {len(chunks)} chunks")
         return chunks
 
-    def save_to_chroma(self, chunks: list[Document], title: str, path: str):
+    def save_to_chroma(self, chunks: list[Document], title: str, relative_path: str):
         self.logger.info(f"Creating vector store for {title}.")
-        self.logger.debug(f"Saving to {path}.")
+        self.logger.debug(f"Saving to {relative_path}.")
 
         # system manager make directory
-        self.system_manager.make_directory(path)
+        self.system_manager.make_directory(relative_path)
+        path = self.system_manager.get_full_path(relative_path)
 
         # Create a new DB from the documents.
         try:
@@ -236,9 +237,10 @@ class VectorDataManager:
         data = self.document_data_manager.get_data()
         for document in data:
             title = self.system_manager.get_title_without_extension(document.metadata["source"])
-            path = f"{self.chroma_path}/{title}"
+            relative_path = f"{self.chroma_path}/{title}"
+            full_path = self.system_manager.get_full_path(relative_path)
             # check if the document is already embedded
-            if self.system_manager.path_exists(path):
+            if self.system_manager.path_exists(relative_path):
                 self.logger.info(f"Document store for {title} already exists and was not reset.")
                 continue
 
@@ -248,7 +250,7 @@ class VectorDataManager:
 
             try:
                 chunks = self.chunk_documents([document])
-                self.save_to_chroma(chunks, title, path)
+                self.save_to_chroma(chunks, title, relative_path)
                 self.result_manager.update_result_list(title, "embedded", True)
                 self.logger.info(f"Created document store for {title}.")
             except Exception as e:
