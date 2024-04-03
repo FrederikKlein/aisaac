@@ -86,3 +86,12 @@ class SystemManager:
         full_path = self.get_full_path(relative_path)
         if os.path.isfile(full_path):
             os.remove(full_path)
+
+    def get_title_without_extension(self, relative_path):
+        """
+        Get the title of a file without the extension.
+
+        :param relative_path: The relative path of the file.
+        :return: The title of the file without the extension.
+        """
+        return os.path.splitext(os.path.basename(relative_path))[0]

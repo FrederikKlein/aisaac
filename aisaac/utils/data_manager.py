@@ -30,17 +30,21 @@ class DocumentManager:
         self.logger = Logger(__name__).get_logger()
 
     def __load_data(self, path):
-        if self.data_format == '*.pdf':
-            loader = PyPDFLoader(path)
-            documents = loader.load()
-            documents = self.clean_and_join_document_pages(documents)
-        elif self.data_format == '*.md':
-            loader = UnstructuredMarkdownLoader(path)
-            documents = loader.load()
-        else:
-            self.logger.error(f"Data format {self.data_format} not supported.")
+        try:
+            if self.data_format == '*.pdf':
+                loader = PyPDFLoader(path)
+                documents = loader.load()
+                documents = self.clean_and_join_document_pages(documents)
+            elif self.data_format == '*.md':
+                loader = UnstructuredMarkdownLoader(path)
+                documents = loader.load()
+            else:
+                self.logger.error(f"Data format {self.data_format} not supported.")
+                return []
+            return documents
+        except Exception as e:
+            self.logger.error(f"Error loading data from {path}: {e}")
             return []
-        return documents
 
     def update_global_data(self):
         # remove any data from global data that isn't in the data paths
@@ -56,7 +60,10 @@ class DocumentManager:
 
                 self.logger.info(f"Loading data from {relative_document_path}.")
                 data = self.__load_data(relative_document_path)
-                self.global_data.append(data)
+                if data is not None:
+                    self.global_data.append(data)
+                else:
+                    self.logger.error(f"Error loading data from {relative_document_path}.")
 
         self.__save_global_data()
 
@@ -82,6 +89,19 @@ class DocumentManager:
                 title = os.path.basename(document_path)
                 return_titles.append(title)
         return return_titles
+
+    def get_converted_titles(self):
+        return_titles = []
+        all_titles = self.get_all_titles()
+        global_data = self.__load_global_data()
+        # compare the titles in the global data with the all titles
+        for data_set in global_data:
+            for data in data_set:
+                title = self.system_manager.get_title_without_extension(data.metadata["source"])
+                if title in all_titles:
+                    return_titles.append(title)
+        return return_titles
+
 
     def get_runnable_titles(self):
         global_titles = self.get_all_titles()
