@@ -237,12 +237,14 @@ class VectorDataManager:
         self.logger.info("All document stores created.")
 
     def get_vectorstore(self, title: str):
+        title = os.path.splitext(title)[0]
         path = f"{self.chroma_path}/{title}"
         if not self.system_manager.path_exists(path):
             self.logger.error(f"Document store for {title} does not exist.")
             return None
         return Chroma(persist_directory=self.system_manager.get_full_path(path),
-                      embdding_function=self.model_manager.get_embedding())
+                      embedding_function=self.model_manager.get_embedding()
+                      )
 
     def get_vectorstore_with_sigmoid_relevance_score_fn(self, title: str):
         path = f"{self.chroma_path}/{title}"
