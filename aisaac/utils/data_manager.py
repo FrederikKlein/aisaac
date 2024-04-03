@@ -28,6 +28,7 @@ class DocumentManager:
         self.system_manager.make_directory(context_manager.get_config('BIN_PATH'))
         self.global_data = []
         self.logger = Logger(__name__).get_logger()
+        self.__load_global_data()
 
     def __load_data(self, path):
         try:
