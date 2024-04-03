@@ -1,5 +1,6 @@
 import math
 import os
+import pickle
 import random
 from collections import Counter
 
@@ -24,6 +25,8 @@ class DocumentManager:
         self.subset_size = int(context_manager.get_config('SUBSET_SIZE'))
         self.chroma_path = context_manager.get_config('CHROMA_PATH')
         self.full_chroma_path = self.system_manager.get_full_path(self.chroma_path)
+        self.bin_path = self.system_manager.get_full_path(context_manager.get_config('BIN_PATH'))
+        self.system_manager.make_directory(context_manager.get_config('BIN_PATH'))
         self.global_data = []
         self.logger = Logger(__name__).get_logger()
 
@@ -40,14 +43,6 @@ class DocumentManager:
             loader = DirectoryLoader(path, glob=self.data_format)
         return documents
 
-    def load_global_data(self):
-        for data_path in self.data_paths:
-            # loop over all documents in data_path
-            for document_path in os.listdir(data_path):
-                self.logger.info(f"Loading data from {document_path}.")
-                data = self.__load_data(f"{data_path}/{document_path}")
-                self.global_data.append(data)
-
     def update_global_data(self):
         # remove any data from global data that isn't in the data paths
         for data_set in self.global_data:
@@ -63,6 +58,8 @@ class DocumentManager:
                 self.logger.info(f"Loading data from {relative_document_path}.")
                 data = self.__load_data(relative_document_path)
                 self.global_data.append(data)
+
+        self.__save_global_data()
 
     def get_data(self):
         return_data = []
@@ -98,6 +95,7 @@ class DocumentManager:
 
     def __get_all_data(self):
         return_data = []
+        self.__load_global_data()
         for data_set in self.global_data:
             return_data.extend(data_set)
         return return_data
@@ -147,6 +145,16 @@ class DocumentManager:
         combined_metadata.pop('page', None)
         combined_document = [Document(page_content=combined_content, metadata=combined_metadata)]
         return combined_document
+
+    def __save_global_data(self):
+        # Serialize and save self.global_data to a binary file
+        with open(f'{self.bin_path}/doc_mngr.pkl', 'wb') as f:
+            pickle.dump(self.global_data, f)
+
+    def __load_global_data(self):
+        # Serialize and save self.global_data to a binary file
+        with open(f'{self.bin_path}/doc_mngr.pkl', 'rb') as f:
+            self.global_data = pickle.load(f)
 
 
 class VectorDataManager:

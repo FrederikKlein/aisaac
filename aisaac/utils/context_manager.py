@@ -11,6 +11,7 @@ class ContextManager:
     _default_config = {
         'CHROMA_PATH': "chroma",
         'DATA_PATHS': ["Data/Excluded", "Data/Included"],
+        'BIN_PATH': 'bin',
         'RESULT_PATH': "results",
         'RESULT_FILE': "results.csv",
         'MODEL_CLIENT_URL': "http://localhost:11434",

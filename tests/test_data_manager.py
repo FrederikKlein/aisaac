@@ -17,7 +17,8 @@ class TestDocumentManager(unittest.TestCase):
             'DATA_FORMAT': '*.txt',
             'RANDOM_SUBSET': 'False',
             'SUBSET_SIZE': '10',
-            'CHROMA_PATH': '/fake/chroma/path'
+            'CHROMA_PATH': '/fake/chroma/path',
+            'BIN_PATH': 'bin'
         }[key]
         self.document_manager = DocumentManager(self.mock_context_manager)
 
@@ -30,13 +31,6 @@ class TestDocumentManager(unittest.TestCase):
         MockDirectoryLoader.assert_called_once_with('/fake/data/path', glob='*.txt')
 
     # Additional tests within TestDocumentManager class
-
-    @patch('aisaac.aisaac.utils.data_manager.DocumentManager._DocumentManager__load_data')
-    def test_load_global_data(self, mock_load_data):
-        mock_load_data.return_value = ['doc1', 'doc2']
-        self.document_manager.load_global_data()
-        mock_load_data.assert_called_with('/fake/data/path')
-        self.assertEqual(self.document_manager.global_data, [['doc1', 'doc2']])
 
     @patch('random.sample')
     def test_get_data_random_subset(self, mock_random_sample):
@@ -86,7 +80,7 @@ class TestDocumentManager(unittest.TestCase):
         footer = "\nFooter text"
         main_contents = ["Main content page 1.", "Main content page 2."]
         documents = [
-            Document(page_content=header + main_content + footer, metadata={'source': 'test.pdf', 'page': i+1})
+            Document(page_content=header + main_content + footer, metadata={'source': 'test.pdf', 'page': i + 1})
             for i, main_content in enumerate(main_contents)
         ]
         expected_content = "\n".join(main_contents)
@@ -98,8 +92,10 @@ class TestDocumentManager(unittest.TestCase):
     def test_documents_with_varying_headers_footers(self):
         # Test with documents where headers and footers do not qualify for removal.
         documents = [
-            Document(page_content="Header only on first page.\nMain content page 1.\nCommon footer.", metadata={'source': 'test.pdf', 'page': 1}),
-            Document(page_content="Main content page 2 with unique footer.\nCommon footer.", metadata={'source': 'test.pdf', 'page': 2})
+            Document(page_content="Header only on first page.\nMain content page 1.\nCommon footer.",
+                     metadata={'source': 'test.pdf', 'page': 1}),
+            Document(page_content="Main content page 2 with unique footer.\nCommon footer.",
+                     metadata={'source': 'test.pdf', 'page': 2})
         ]
         expected_content = "Header only on first page.\nMain content page 1.\nMain content page 2 with unique footer."
         result = DocumentManager(ContextManager()).clean_and_join_document_pages(documents)
@@ -197,7 +193,32 @@ class TestVectorDataManager(unittest.TestCase):
 
 
 # Additional tests for get_unified_vectorstore, get_vectorstore_with_sigmoid_relevance_score_fn can be added similarly
+import unittest
 
+
+class TestGlobalDataMethods(unittest.TestCase):
+
+    def setUp(self):
+        self.test_class = DocumentManager(ContextManager())
+
+    def test_save_and_load_global_data(self):
+        # Set some test data
+        self.test_class.global_data = {'key': 'value', 'number': 42}
+
+        # Save the global data
+        self.test_class._DocumentManager__save_global_data()  # Adjust method access accordingly
+
+        # Change the global_data to ensure it's different from what we saved
+        self.test_class.global_data = None
+
+        # Load the global data
+        self.test_class._DocumentManager__load_global_data()  # Adjust method access accordingly
+
+        # Check if the loaded data matches the saved data
+        self.assertEqual(self.test_class.global_data, {'key': 'value', 'number': 42})
+
+
+# This allows the tests to be run when the script is executed directly
 
 if __name__ == '__main__':
     unittest.main()
