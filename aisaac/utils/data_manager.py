@@ -1,6 +1,7 @@
 import math
 import os
 import random
+from collections import Counter
 
 from langchain.document_loaders import DirectoryLoader
 from langchain.schema import Document
@@ -8,6 +9,7 @@ from langchain.text_splitter import NLTKTextSplitter
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores.chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import UnstructuredMarkdownLoader
 
 from aisaac.aisaac.utils.logger import Logger
 
@@ -28,9 +30,14 @@ class DocumentManager:
     def __load_data(self, path):
         if self.data_format == '*.pdf':
             loader = PyPDFLoader(path)
+            documents = loader.load()
+            documents = self.__clean_and_join_documents(documents)
+        elif self.data_format == '*.md':
+            loader = UnstructuredMarkdownLoader(path)
+            documents = loader.load()
         else:
+            self.logger.error(f"Data format {self.data_format} not supported.")
             loader = DirectoryLoader(path, glob=self.data_format)
-        documents = loader.load()
         return documents
 
     def load_global_data(self):
@@ -108,6 +115,35 @@ class DocumentManager:
         else:
             self.logger.info(f"Loaded all runnable data.")
         return data
+
+    def __clean_and_join_documents(self, documents):
+        # Assuming docs is a list of Document objects
+        lines_across_pages = [doc.page_content.split('\n') for doc in documents]
+
+        # Flatten the list to count occurrences of each line
+        all_lines = [line for page in lines_across_pages for line in page]
+        line_counts = Counter(all_lines)
+
+        # Assume a header or footer is repeated if it appears on more than half of the pages
+        repetition_threshold = len(documents) // 2
+        repeated_lines = {line for line, count in line_counts.items() if count > repetition_threshold}
+
+        # Filter out repeated lines from each page
+        cleaned_pages = []
+        for page in lines_across_pages:
+            cleaned_page = '\n'.join(line for line in page if line not in repeated_lines)
+            cleaned_pages.append(cleaned_page)
+
+        # Combine cleaned pages into one string
+        combined_content = "\n".join(cleaned_pages)
+
+        combined_metadata = documents[0].metadata
+
+        #remove the metadata [page] from the combined metadata, keeping the rest of it
+        combined_metadata.pop('page', None)
+        combined_document = [Document(page_content=combined_content, metadata=combined_metadata)]
+        return combined_document
+
 
 
 class VectorDataManager:
