@@ -86,11 +86,14 @@ class DocumentManager:
     def get_runnable_titles(self):
         global_titles = self.get_all_titles()
         for title in global_titles[:]:
-            if not os.path.exists(f"{self.full_chroma_path}/{title}"):
-                self.logger.debug(f"Document store for {title} does not exist.")
+            # remove end of file extension
+            dir_title = os.path.splitext(title)[0]
+            self.logger.debug(f"Checking {self.chroma_path}/{dir_title}")
+            if not self.system_manager.path_exists(f"{self.chroma_path}/{dir_title}"):
+                self.logger.debug(f"Document store for {dir_title} does not exist.")
                 global_titles.remove(title)
             else:
-                self.logger.debug(f"Document store for {title} exists.")
+                self.logger.debug(f"Document store for {dir_title} exists.")
         return global_titles
 
     def __get_all_data(self):
@@ -104,7 +107,7 @@ class DocumentManager:
         data = self.__get_all_data()
         for document in data[:]:
             title = os.path.splitext(os.path.basename(document.metadata["source"]))[0]
-            if not os.path.exists(f"{self.full_chroma_path}/{title}"):
+            if not self.system_manager.path_exists(f"{self.chroma_path}/{title}"):
                 self.logger.debug(f"Document store for {title} does not exist.")
                 data.remove(document)
         if self.random_subset:
@@ -213,7 +216,7 @@ class VectorDataManager:
         data = self.document_data_manager.get_data()
         for document in data:
             title = os.path.splitext(os.path.basename(document.metadata["source"]))[0]
-            path = f"{self.full_chroma_path}/{title}"
+            path = f"{self.chroma_path}/{title}"
             # check if the document is already embedded
             if self.system_manager.path_exists(path):
                 self.logger.info(f"Document store for {title} already exists and was not reset.")
@@ -234,19 +237,20 @@ class VectorDataManager:
         self.logger.info("All document stores created.")
 
     def get_vectorstore(self, title: str):
-        path = f"{self.full_chroma_path}/{title}"
+        path = f"{self.chroma_path}/{title}"
         if not self.system_manager.path_exists(path):
             self.logger.error(f"Document store for {title} does not exist.")
             return None
-        return Chroma(persist_directory=path, embdding_function=self.model_manager.get_embedding())
+        return Chroma(persist_directory=self.system_manager.get_full_path(path),
+                      embdding_function=self.model_manager.get_embedding())
 
     def get_vectorstore_with_sigmoid_relevance_score_fn(self, title: str):
-        path = f"{self.full_chroma_path}/{title}"
+        path = f"{self.chroma_path}/{title}"
         if not self.system_manager.path_exists(path):
             self.logger.error(f"Document store for {title} does not exist.")
             return None
         return Chroma(
-            persist_directory=path,
+            persist_directory=self.system_manager.get_full_path(path),
             embedding_function=self.model_manager.get_embedding(),
             collection_metadata={"hnsw:space": "l2"},
             relevance_score_fn=lambda distance: 1 / (1 + math.exp(-distance))

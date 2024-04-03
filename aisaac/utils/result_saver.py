@@ -7,25 +7,23 @@ class ResultSaver:
         self.result_path = context_manager.get_config('RESULT_PATH')
         self.result_file = context_manager.get_config('RESULT_FILE')
         self.system_manager = context_manager.get_system_manager()
-        self.full_result_path = self.system_manager.get_full_path(
+        self.full_result_file_path = self.system_manager.get_full_path(
             f"{self.result_path}/{self.result_file}")
-        self.result_path = self.system_manager.get_full_path(self.result_path)
         self.system_manager.make_directory(self.result_path)
-        self.output_file_path = os.path.join(self.result_path, self.result_file)
         self.csv_headers = ['title', 'converted', 'embedded', 'relevant', 'checkpoints', 'reasoning']
-        self.chroma_path = context_manager.get_config('CHROMA_PATH')
+        self.full_chroma_path = self.system_manager.get_full_path(context_manager.get_config('CHROMA_PATH'))
         self.reset_results_bool = context_manager.get_config('RESET_RESULTS') == 'True'
         if self.reset_results_bool:
             self.reset_results()
 
     def write_csv(self, data):
-        with open(self.output_file_path, 'w', newline='') as csv_file:
+        with open(self.full_result_file_path, 'w', newline='') as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=self.csv_headers)
             writer.writeheader()
             writer.writerows(data)
 
     def read_csv_to_dict_list(self):
-        with open(self.output_file_path, 'r') as file:
+        with open(self.full_result_file_path, 'r') as file:
             reader = csv.DictReader(file)
             data = [row for row in reader]
         return data
@@ -94,14 +92,14 @@ class ResultSaver:
         # Reset the file
         self.write_csv([])
 
-    def set_up_new_results_file(self, new_file_path, data_entries):
+    def set_up_new_results_file(self, new_relative_file_path, data_entries):
         # Reset the file
-        self.output_file_path = new_file_path  # Update the file path for new results
+        self.full_result_file_path = self.system_manager.get_full_path(new_relative_file_path)  # Update the file path for new results
         self.write_csv([])  # Create new file with empty data
         for entry in data_entries:
             title = os.path.splitext(os.path.basename(entry.metadata["source"]))[0]
             result_list = self.__create_result_list(title)
-            if os.path.exists(os.path.join(self.chroma_path, title)):
+            if os.path.exists(os.path.join(self.full_chroma_path, title)):
                 result_list[0].update({"embedded": True})
             self.add_data_csv(result_list)
 

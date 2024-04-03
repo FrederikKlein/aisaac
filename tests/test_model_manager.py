@@ -5,8 +5,6 @@ from aisaac.aisaac.utils import ModelManager
 
 
 class MyTestCase(unittest.TestCase):
-    def test_something(self):
-        self.assertEqual(True, False)  # add assertion here
 
     @patch('ollama.list', autospec=True)  # Direct reference to ollama.list as imported
     @patch('xinference.client.Client.list_models', autospec=True)  # Patching list_models of Client directly
