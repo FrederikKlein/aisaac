@@ -14,6 +14,8 @@ class ContextManager:
         'BIN_PATH': 'bin',
         'RESULT_PATH': "results",
         'RESULT_FILE': "results.csv",
+        'ORIGINAL_RESULT_FILE': "original_results.csv",
+        'ORIGINAL_RESULT_PATH': "gold_standard_data",
         'MODEL_CLIENT_URL': "http://localhost:11434",
         'EMBEDDING_MODEL': "nomic-embed-text:latest",
         'RAG_MODEL': "mixtral:latest",
