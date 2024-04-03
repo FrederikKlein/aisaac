@@ -31,7 +31,7 @@ class DocumentManager:
         if self.data_format == '*.pdf':
             loader = PyPDFLoader(path)
             documents = loader.load()
-            documents = self.__clean_and_join_documents(documents)
+            documents = self.clean_and_join_document_pages(documents)
         elif self.data_format == '*.md':
             loader = UnstructuredMarkdownLoader(path)
             documents = loader.load()
@@ -116,7 +116,11 @@ class DocumentManager:
             self.logger.info(f"Loaded all runnable data.")
         return data
 
-    def __clean_and_join_documents(self, documents):
+    def clean_and_join_document_pages(self, documents):
+        # Return the input directly if there's only one page or no pages at all
+        if len(documents) <= 1:
+            return documents
+
         # Assuming docs is a list of Document objects
         lines_across_pages = [doc.page_content.split('\n') for doc in documents]
 

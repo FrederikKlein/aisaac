@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from langchain_core.documents import Document
 
+from aisaac.aisaac.utils.context_manager import ContextManager
 from aisaac.aisaac.utils.data_manager import DocumentManager, \
     VectorDataManager  # Adjust this import according to your project structure
 
@@ -69,6 +70,48 @@ class TestDocumentManager(unittest.TestCase):
             data = self.document_manager.get_runnable_data()
             self.assertEqual(len(data), 2)  # Both documents should be returned since the paths exist
             self.assertEqual(data, [mock_doc1, mock_doc2])
+
+    def test_single_document_no_header_footer(self):
+        # Test with a single document that doesn't have a header or footer.
+        documents = [Document(page_content="Main content only.", metadata={'source': 'test.pdf', 'page': 1})]
+        expected_content = "Main content only."
+        result = DocumentManager(ContextManager()).clean_and_join_document_pages(documents)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].page_content, expected_content)
+        self.assertEqual(result[0].metadata['source'], 'test.pdf')
+
+    def test_multiple_documents_with_same_header_footer(self):
+        # Test with multiple documents having the same header and footer.
+        header = "Header text\n"
+        footer = "\nFooter text"
+        main_contents = ["Main content page 1.", "Main content page 2."]
+        documents = [
+            Document(page_content=header + main_content + footer, metadata={'source': 'test.pdf', 'page': i+1})
+            for i, main_content in enumerate(main_contents)
+        ]
+        expected_content = "\n".join(main_contents)
+        result = DocumentManager(ContextManager()).clean_and_join_document_pages(documents)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].page_content, expected_content)
+        self.assertEqual(result[0].metadata['source'], 'test.pdf')
+
+    def test_documents_with_varying_headers_footers(self):
+        # Test with documents where headers and footers do not qualify for removal.
+        documents = [
+            Document(page_content="Header only on first page.\nMain content page 1.\nCommon footer.", metadata={'source': 'test.pdf', 'page': 1}),
+            Document(page_content="Main content page 2 with unique footer.\nCommon footer.", metadata={'source': 'test.pdf', 'page': 2})
+        ]
+        expected_content = "Header only on first page.\nMain content page 1.\nMain content page 2 with unique footer."
+        result = DocumentManager(ContextManager()).clean_and_join_document_pages(documents)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].page_content, expected_content)
+        self.assertEqual(result[0].metadata['source'], 'test.pdf')
+
+    def test_empty_document_array(self):
+        # Test with an empty array of documents.
+        documents = []
+        result = DocumentManager(ContextManager()).clean_and_join_document_pages(documents)
+        self.assertEqual(len(result), 0)
 
 
 class TestVectorDataManager(unittest.TestCase):
