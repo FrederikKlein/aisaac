@@ -61,6 +61,8 @@ class ContextManager:
         """
         # Merge user-provided config with defaults. User config overrides defaults.
         self._config = {**self._default_config, **(config or {})}
+        self.set_config('BIN_PATH', f"{self.get_config('BIN_PATH')}/{self.__hash__()}")
+
 
     def get_config(self, key):
         """
