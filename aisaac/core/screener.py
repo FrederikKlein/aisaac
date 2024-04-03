@@ -51,6 +51,8 @@ class Screener:
         format_instructions = output_parser.get_format_instructions()
         prompt = self.create_prompt(context_text, checkpoints, format_instructions)
         model = self.mm.get_rag_model()
+        if context_text is None:
+            return self.__get_irrelevant_response(output_parser, title, checkpoints)
         response_text = model.predict(prompt)
         while not self.__response_correctly_formatted(response_text, output_parser):
             self.logger.info("The response was not correctly formatted. Asking again.")
@@ -61,7 +63,13 @@ class Screener:
     def create_context_text(self, title, checkpoints):
         similarity_search_results = []
         for checkpoint in checkpoints.values():
-            similarity_search_results.append(self.similarity_searcher.similarity_search(title, checkpoint))
+            result = self.similarity_searcher.similarity_search(title, checkpoint)
+            if len(result) > 0:
+                similarity_search_results.append(result)
+        # check if the results are empty
+        if not similarity_search_results:
+            self.logger.info(f"No results found for {title}")
+            return None
         context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in similarity_search_results])
         return context_text
 
@@ -87,3 +95,6 @@ class Screener:
         prompt = prompt_template.format(context=context_text, question=self.question,
                                         checkpoints=checkpoints, format_instructions=format_instructions)
         return prompt
+
+    def __get_irrelevant_response(self, output_parser, title, checkpoints):
+        pass
