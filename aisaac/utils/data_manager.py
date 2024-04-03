@@ -4,7 +4,6 @@ import pickle
 import random
 from collections import Counter
 
-from langchain.document_loaders import DirectoryLoader
 from langchain.schema import Document
 from langchain.text_splitter import NLTKTextSplitter
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -40,7 +39,7 @@ class DocumentManager:
             documents = loader.load()
         else:
             self.logger.error(f"Data format {self.data_format} not supported.")
-            loader = DirectoryLoader(path, glob=self.data_format)
+            return []
         return documents
 
     def update_global_data(self):
@@ -63,6 +62,7 @@ class DocumentManager:
 
     def get_data(self):
         return_data = []
+        self.__load_global_data()
         # self.update_global_data()
         len_data_sets = len(self.data_paths)
         if self.random_subset:
