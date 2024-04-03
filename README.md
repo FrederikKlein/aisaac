@@ -1,3 +1,7 @@
+![aisaac logo v2](https://github.com/FrederikKlein/aisaac/assets/94715827/90a82ee5-9b58-4839-ac48-01d82123eab9)
+
+
+
 # aisaac
 > **🔮** *An Intelligent Screening Assistant for Academic Content*
 
