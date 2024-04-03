@@ -34,12 +34,6 @@ class SimilaritySearcher:
 
     def similarity_search(self, document_title, query_text):
         db = self.vector_data_manager.get_vectorstore(document_title)
-        # debugging
-        self.logger.debug(f"This is the collection count: {db._collection.count()}")
-        self.logger.debug(f"This is the collection: {db._collection}")
-        self.logger.debug(f"And this is the result for the sim_search: {db.similarity_search(query_text, k=self.similarity_search_k)}")
-
-
         self.logger.debug(f"Conducting similarity search for {document_title} with following query: \n{query_text}.")
         # catching warnings from the similarity search and trying again with a different relevance score function
         with warnings.catch_warnings(record=True) as caught_warnings:

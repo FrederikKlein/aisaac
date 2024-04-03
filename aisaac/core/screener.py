@@ -40,6 +40,7 @@ class Screener:
             self.logger.info(f"Processing {title} \n({counter} out of {iterations})")
             try:
                 response = self.craft_screening_response_for(title, checkpoints)
+                self.logger.debug(f"Response for {title}:\n{response}")
                 self.result_saver.save_response(response)
                 self.logger.debug(f"Processed {title} successfully")
             except Exception as e:
@@ -58,7 +59,6 @@ class Screener:
         while not self.__response_correctly_formatted(response_text, output_parser):
             self.logger.info("The response was not correctly formatted. Asking again.")
             response_text = model.predict(prompt)
-        self.logger.debug(f"Response for {title}:\n{response_text}")
         data = output_parser.parse(response_text)
         return data
 
@@ -84,9 +84,9 @@ class Screener:
         response_schemas = [ResponseSchema(name="title", description="Title of the document", type="string"),
                             ResponseSchema(name="checkpoints",
                                            description="For each Checkpoint, whether it is true or false",
-                                           type="string"),
+                                           type="dictionary"),
                             ResponseSchema(name="reasoning", description="Reasoning for each checkpoint",
-                                           type="string"), ]
+                                           type="dictionary"), ]
         output_parser = StructuredOutputParser.from_response_schemas(response_schemas)
         return output_parser
 
