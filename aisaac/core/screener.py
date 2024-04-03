@@ -53,10 +53,12 @@ class Screener:
         model = self.mm.get_rag_model()
         if context_text is None:
             return self.__get_irrelevant_response(output_parser, title, checkpoints)
+        self.logger.debug(f"Prompt for {title}:\n{prompt}")
         response_text = model.predict(prompt)
         while not self.__response_correctly_formatted(response_text, output_parser):
             self.logger.info("The response was not correctly formatted. Asking again.")
             response_text = model.predict(prompt)
+        self.logger.debug(f"Response for {title}:\n{response_text}")
         data = output_parser.parse(response_text)
         return data
 
@@ -70,7 +72,12 @@ class Screener:
         if not similarity_search_results:
             self.logger.info(f"No results found for {title}")
             return None
-        context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in similarity_search_results])
+        checkpoint_context_text = []
+        for result in similarity_search_results:
+            result = self.__remove_duplicates(result)
+            checkpoint_context_text.append("\n\n---\n\n".join([doc.page_content for doc, _score in result]))
+        # join the context texts of the checkpoints
+        context_text = "\n\n---\n\n".join(checkpoint_context_text)
         return context_text
 
     def get_output_parser(self):
@@ -98,3 +105,19 @@ class Screener:
 
     def __get_irrelevant_response(self, output_parser, title, checkpoints):
         pass
+
+    def __remove_duplicates(self, results):
+        seen_contents = set()
+        unique_results = []
+
+        for doc, score in results:
+            # Check if the document's page_content has already been encountered
+            if doc.page_content not in seen_contents:
+                # If not, add it to the unique results list and mark the content as seen
+                unique_results.append((doc, score))
+                seen_contents.add(doc.page_content)
+
+        return unique_results
+
+
+
