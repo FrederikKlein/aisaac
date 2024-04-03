@@ -15,6 +15,9 @@ class ResultSaver:
         self.reset_results_bool = context_manager.get_config('RESET_RESULTS') == 'True'
         if self.reset_results_bool:
             self.reset_results()
+        if not self.system_manager.path_exists(f"{self.result_path}/{self.result_file}"):
+            self.set_up_new_results_file(f"{self.result_path}/{self.result_file}",
+                                         context_manager.get_document_data_manager().get_all_titles())
 
     def write_csv(self, data):
         with open(self.full_result_file_path, 'w', newline='') as csv_file:
@@ -92,20 +95,33 @@ class ResultSaver:
         # Reset the file
         self.write_csv([])
 
-    def set_up_new_results_file(self, new_relative_file_path, data_entries):
+    def set_up_new_results_file(self, new_relative_file_path, all_titles):
         # Reset the file
-        self.full_result_file_path = self.system_manager.get_full_path(new_relative_file_path)  # Update the file path for new results
+        self.full_result_file_path = self.system_manager.get_full_path(
+            new_relative_file_path)  # Update the file path for new results
         self.write_csv([])  # Create new file with empty data
-        for entry in data_entries:
-            title = os.path.splitext(os.path.basename(entry.metadata["source"]))[0]
-            result_list = self.__create_result_list(title)
-            if os.path.exists(os.path.join(self.full_chroma_path, title)):
+        for title in all_titles:
+            title_without_extension = os.path.splitext(os.path.basename(title))[0]
+            result_list = self.__create_result_list(title_without_extension)
+            if os.path.exists(os.path.join(self.full_chroma_path, title_without_extension)):
                 result_list[0].update({"embedded": True})
             self.add_data_csv(result_list)
 
-    def save_response(self, response):
-        #TODO: Implement this method
-        pass
+    def save_response(self, response, title):
+        # TODO: Implement this method
+        checkpoints = response['checkpoints']
+        reasoning = response['reasoning']
+        converted_checkpoints = {key: value.lower() == 'true' if isinstance(value, str) else bool(value) for key, value
+                                 in checkpoints.items()}
+        # check all the values of the converted_checkpoints. If all of them are True, set relevant to True
+        relevant = all(value is True for value in converted_checkpoints.values())
+        # save the response to the csv file
+        self.update_csv([{
+            "title": title,
+            "relevant": relevant,
+            "checkpoints": converted_checkpoints,
+            "reasoning": reasoning
+        }])
 
 
-#%%
+# %%

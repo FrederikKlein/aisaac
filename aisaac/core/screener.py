@@ -1,3 +1,5 @@
+import os
+
 from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -41,7 +43,9 @@ class Screener:
             try:
                 response = self.craft_screening_response_for(title, checkpoints)
                 self.logger.debug(f"Response for {title}:\n{response}")
-                self.result_saver.save_response(response)
+                # remove the file extension from title. Keep in mind that the file name could have multiple dots
+                title_without_extension = os.path.splitext(title)[0]
+                self.result_saver.save_response(response, title_without_extension)
                 self.logger.debug(f"Processed {title} successfully")
             except Exception as e:
                 self.logger.error(f"Error processing {title}: {e}")
