@@ -247,6 +247,7 @@ class VectorDataManager:
                       )
 
     def get_vectorstore_with_sigmoid_relevance_score_fn(self, title: str):
+        title = os.path.splitext(title)[0]
         path = f"{self.chroma_path}/{title}"
         if not self.system_manager.path_exists(path):
             self.logger.error(f"Document store for {title} does not exist.")
