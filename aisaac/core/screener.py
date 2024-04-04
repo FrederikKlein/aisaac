@@ -1,5 +1,4 @@
 import os
-
 from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -47,6 +46,7 @@ class Screener:
                 title_without_extension = os.path.splitext(title)[0]
                 self.result_saver.save_response(response, title_without_extension)
                 self.logger.debug(f"Processed {title} successfully")
+                self.logger.critical(f"Processed {title} successfully")
             except Exception as e:
                 self.logger.error(f"Error processing {title}: {e}")
 
