@@ -94,9 +94,9 @@ class DocumentManager:
     def get_converted_titles(self):
         return_titles = []
         all_titles = self.get_all_titles()
-        global_data = self.__load_global_data()
+        self.__load_global_data()
         # compare the titles in the global data with the all titles
-        for data_set in global_data:
+        for data_set in self.global_data:
             for data in data_set:
                 title = self.system_manager.get_title_without_extension(data.metadata["source"])
                 if title in all_titles:
