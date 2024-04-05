@@ -1,0 +1,14 @@
+# This file lists all dependencies for the project.
+# Tested on Python 3.10. It is required to have at least Python 3.9.
+
+# Replace `latest` with the specific version numbers you've tested with
+langchain==0.1.14
+pip==23.2.1
+xinference==0.10.0
+packaging==23.2
+ollama==0.1.8
+jupyter==1.0.0
+cohere==5.2.2
+scikit-learn==1.4.1.post1  # This is the official package name; sklearn is just an import name
+pypdf==4.1.0  # Ensure you specify the correct pypdf package, as there are several with similar names
+chromadb==0.4.24
