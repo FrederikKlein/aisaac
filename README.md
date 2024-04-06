@@ -16,7 +16,8 @@ aisaac is a tool designed to assist researchers and academics in screening and e
 
 ## Installation
 
-Before installing `aisaac`, ensure you have a compatible Python version installed. Then, follow these steps:
+Before installing `aisaac`, ensure you have a compatible Python version installed. Python >= 3.9 is required. The system was tested on Python 3.10 though.
+Then, follow these steps:
 
 1. Clone the `aisaac` repository:
    ```bash
@@ -32,14 +33,35 @@ Before installing `aisaac`, ensure you have a compatible Python version installe
    ```
 
 ## Usage
-`aisaac` can be used via a command line interface or through its graphical user interface (GUI).
+`aisaac` can be used as a python package or through its graphical user interface (GUI).
 
-### Command Line Interface
-To use `aisaac` via the command line interface, navigate to the `aisaac` directory run the following command:
-   ```bash
-   python -m aisaac
-   ```
-This will launch the command line interface, where you can interact with the tool.
+### Python Package
+To use `aisaac` as a python package, import the `aisaac` module and use its classes and functions as needed. 
+The core classes are
+- 'Screener'
+- 'Evaluator'
+- 'Optimizer'
+
+To organize contexts, the core classes use a context manager that is filled with default values. The context manager can be used to set custom values for the classes.
+To do so, first import the context manager:
+```python
+from aisaac.aisaac.utils.context_manager import ContextManager
+```
+Then, create a context manager object and set custom values:
+```python
+cm = ContextManager()
+cm.set_config('RAG_MODEL', "mixtral:latest")
+cm.set_config('RESULT_FILE', "results.csv")
+cm.set_config('CHECKPOINT_DICTIONARY', checkpoint_dict)
+```
+Finally, pass the context manager object to the core classes and run the desired functions. For example, to create a new screener object with custom values, use the following code snippet:
+```python
+screener = Screener(context_manager=cm)
+screener.do_screening()
+```
+All the configuration options of the context manager can be found in the [Context Manager Documentation](docs/context_manager.md) TODO.
+
+
 
 ### Graphical User Interface
 To use `aisaac` via the graphical user interface, run the following command:
