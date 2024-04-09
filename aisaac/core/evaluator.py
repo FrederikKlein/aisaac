@@ -157,6 +157,13 @@ class Evaluator:
         # plt.savefig('feature-importance.pdf', dpi=300)
         plt.show()
 
+    def get_cohen_kappa(self):
+        # TODO edit this function to work with the actual data
+        from sklearn.metrics import cohen_kappa_score
+        y1 = ["negative", "positive", "negative", "neutral", "positive"]
+        y2 = ["negative", "positive", "negative", "neutral", "negative"]
+        cohen_kappa_score(y1, y2)
+
     def get_full_evaluation(self):
         tptnfpfn = self.get_tp_tn_fp_fn()
         mcc = self.calculate_mcc(*tptnfpfn)
