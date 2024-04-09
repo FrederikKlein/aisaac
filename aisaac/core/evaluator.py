@@ -70,7 +70,8 @@ class Evaluator:
 
     def draw_confusion_matrix(self, confusion_matrix):
         plt.figure(figsize=(10, 7))
-        plt.imshow([[confusion_matrix['TP'], confusion_matrix['FP']], [confusion_matrix['FN'], confusion_matrix['TN']]], cmap='Blues')
+        plt.imshow([[confusion_matrix['TP'], confusion_matrix['FP']], [confusion_matrix['FN'], confusion_matrix['TN']]],
+                   cmap='Blues')
         plt.colorbar()
         plt.xticks([0, 1], ['Predicted Positive', 'Predicted Negative'])
         plt.yticks([0, 1], ['Actual Positive', 'Actual Negative'])
@@ -110,6 +111,18 @@ class Evaluator:
         return df_results
 
     def get_feature_importance(self):
+        clf = self.get_trained_classifier()
+
+        # Get feature importances
+        feature_importances = clf.feature_importances_
+
+        # Print feature importances
+        for i, importance in enumerate(feature_importances):
+            self.logger.info(f"Feature {self.checkpoint_keys[i]}: Importance Score = {importance}")
+
+        return feature_importances
+
+    def get_trained_classifier(self):
         gold_standard = self.get_gold_standard_dataframe()
         predictions = self.get_results_dataframe()
         # Drop rows with missing values
@@ -125,15 +138,7 @@ class Evaluator:
         # Initialize and train random forest classifier
         clf = RandomForestClassifier(n_estimators=500, random_state=42)
         clf.fit(X, y)
-
-        # Get feature importances
-        feature_importances = clf.feature_importances_
-
-        # Print feature importances
-        for i, importance in enumerate(feature_importances):
-            self.logger.info(f"Feature {self.checkpoint_keys[i]}: Importance Score = {importance}")
-
-        return feature_importances
+        return clf
 
     def draw_feature_importance(self, feature_importances):
         # Create a DataFrame to store feature importances with corresponding keys
