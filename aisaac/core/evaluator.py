@@ -54,6 +54,31 @@ class Evaluator:
     def calculate_f_score(self, tp, fp, fn):
         return tp / (tp + 0.5 * (fp + fn))
 
+    def calculate_specificity(self, tn, fp):
+        return tn / (tn + fp)
+
+    def calculate_sensitivity(self, tp, fn):
+        return tp / (tp + fn)
+
+    def generate_confusion_matrix(self, tp, tn, fp, fn):
+        return {
+            'TP': tp,
+            'TN': tn,
+            'FP': fp,
+            'FN': fn
+        }
+
+    def draw_confusion_matrix(self, confusion_matrix):
+        plt.figure(figsize=(10, 7))
+        plt.imshow([[confusion_matrix['TP'], confusion_matrix['FP']], [confusion_matrix['FN'], confusion_matrix['TN']]], cmap='Blues')
+        plt.colorbar()
+        plt.xticks([0, 1], ['Predicted Positive', 'Predicted Negative'])
+        plt.yticks([0, 1], ['Actual Positive', 'Actual Negative'])
+        plt.xlabel('Predicted')
+        plt.ylabel('Actual')
+        plt.title('Confusion Matrix')
+        plt.show()
+
     # Function to extract values from dictionary and return as Series
     def extract_values(self, row, key):
         dict_str = row['checkpoints']
@@ -133,4 +158,8 @@ class Evaluator:
         f_score = self.calculate_f_score(tptnfpfn[0], tptnfpfn[2], tptnfpfn[3])
         feature_importance = self.get_feature_importance()
         self.draw_feature_importance(feature_importance)
-        return mcc, f_score, feature_importance
+        confusion_matrix = self.generate_confusion_matrix(*tptnfpfn)
+        self.draw_confusion_matrix(confusion_matrix)
+        specificity = self.calculate_specificity(tptnfpfn[1], tptnfpfn[2])
+        sensitivity = self.calculate_sensitivity(tptnfpfn[0], tptnfpfn[3])
+        return confusion_matrix, mcc, f_score, specificity, sensitivity, feature_importance
