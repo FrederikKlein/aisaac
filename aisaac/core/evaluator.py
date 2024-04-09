@@ -167,4 +167,4 @@ class Evaluator:
         self.draw_confusion_matrix(confusion_matrix)
         specificity = self.calculate_specificity(tptnfpfn[1], tptnfpfn[2])
         sensitivity = self.calculate_sensitivity(tptnfpfn[0], tptnfpfn[3])
-        return confusion_matrix, mcc, f_score, specificity, sensitivity, feature_importance
+        return mcc, f_score, feature_importance, confusion_matrix, specificity, sensitivity
