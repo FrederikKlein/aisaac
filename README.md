@@ -35,7 +35,7 @@ Then, follow these steps:
 ## Usage
 `aisaac` can be used as a python package or through its graphical user interface (GUI).
 
-### Python Package
+### Python Package Quickstart Guide
 To use `aisaac` as a python package, import the `aisaac` module and use its classes and functions as needed. 
 The core classes are
 - 'Screener'
@@ -64,15 +64,15 @@ All the configuration options of the context manager can be found in the [Contex
 
 
 ### Graphical User Interface
+_currently in to-do and not usable._
+<!---
 To use `aisaac` via the graphical user interface, run the following command:
    ```bash
    streamlit run uisaac.py
    ```
+--->
 
 ## Testing and Benchmarking
-To ensure aisaac meets various user needs and integrates smoothly with a wide range of configurations, especially concerning different language models (LLMs), we've developed a customizable testing script. This script facilitates the creation and execution of tests across numerous configurations, enabling both developers and users to verify aisaac's compatibility and performance under different conditions. We highly encourage users and contributors to leverage this script to expand our testing coverage, particularly for new or custom LLMs. Detailed instructions on how to use the script and contribute tests can be found in the tests directory. Your contributions help make aisaac more robust and versatile, ensuring it remains effective across diverse deployment scenarios.
-Find our interactive testing notebook in the `testing_guides` directory. This resource is designed to help you understand `aisaac`'s testing framework and to create your tests. It combines executable code with comprehensive instructions, making it an invaluable tool for ensuring `aisaac` meets your specific requirements.
-
 To get started, navigate to the `testing_guides` folder and open the benchmarking notebook:
 ```bash
 cd docs
