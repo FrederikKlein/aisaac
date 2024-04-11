@@ -1,8 +1,15 @@
 import os
+import time
+
 from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 from langchain_core.prompts import ChatPromptTemplate
 
 from aisaac.aisaac.utils import Logger
+
+import requests
+from requests.exceptions import ConnectionError, HTTPError
+from urllib3.exceptions import NewConnectionError, MaxRetryError
+from http.client import RemoteDisconnected
 
 
 class Screener:
@@ -50,6 +57,9 @@ class Screener:
                     self.logger.critical(f"Processed {title} successfully")
                 else:
                     self.logger.critical(f"Processed {title} unsuccessfully")
+            except (ConnectionError, HTTPError, NewConnectionError, MaxRetryError, RemoteDisconnected, ValueError) as e:
+                self.logger.error(f"Error connecting to the model: {e}. Giving it a second to recover")
+                time.sleep(10)
             except Exception as e:
                 self.logger.error(f"Error processing {title}: {e}")
 
