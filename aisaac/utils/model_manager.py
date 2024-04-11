@@ -59,7 +59,7 @@ class ModelManager:
 
         else:
             self.logger.info("Using cosy models.")
-            cosy_client = Client(self.model_client_url)
+            cosy_client = Client(self.model_client_url, api_key='sk-2ca0362c63os6')
             # cosyClient.login("student", "students_key")
             models = cosy_client.list_models()
             self.model_uids = {model['model_name']: uid for uid, model in models.items()}
@@ -98,5 +98,8 @@ class ModelManager:
             self.my_chat_model = self.__set_up_rag_model()
             sleeping_time *= 2
         return self.my_chat_model
+
+    def get_running_models(self):
+        return self.model_uids
 
 # %%
