@@ -44,15 +44,15 @@ class ModelManager:
         if self.use_local_models:
             self.logger.info("Using local models.")
             models = ollama.list()
-            model_uids = {model['name']: model['digest'] for model in models["models"]}
-            self.logger.info(f"Available models: {list(model_uids.keys())}")
+            self.model_uids = {model['name']: model['digest'] for model in models["models"]}
+            self.logger.info(f"Available models: {list(self.model_uids.keys())}")
 
-            if self.rag_model_id not in model_uids:
+            if self.rag_model_id not in self.model_uids:
                 self.logger.critical(f"{self.rag_model_id} does not exist")
             else:
                 self.my_chat_model = self.__set_up_rag_model()
 
-            if self.embedding_model_id not in model_uids:
+            if self.embedding_model_id not in self.model_uids:
                 self.logger.critical(f"{self.embedding_model_id} does not exist")
             else:
                 self.embedding = self.__set_up_embedding()
@@ -62,15 +62,15 @@ class ModelManager:
             cosy_client = Client(self.model_client_url, api_key='sk-2ca0362c63os6')
             # cosyClient.login("student", "students_key")
             models = cosy_client.list_models()
-            model_uids = {model['model_name']: uid for uid, model in models.items()}
-            self.logger.info(f"Available models: {list(model_uids.keys())}")
+            self.model_uids = {model['model_name']: uid for uid, model in models.items()}
+            self.logger.info(f"Available models: {list(self.model_uids.keys())}")
 
-            if self.embedding_model_id not in model_uids:
+            if self.embedding_model_id not in self.model_uids:
                 self.logger.critical(f"{self.embedding_model_id} does not exist")
             else:
                 self.embedding = self.__set_up_embedding()
 
-            if self.rag_model_id not in model_uids:
+            if self.rag_model_id not in self.model_uids:
                 self.logger.critical(f"{self.rag_model_id} does not exist")
             else:
                 self.my_chat_model = self.__set_up_rag_model()
