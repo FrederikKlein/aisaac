@@ -60,9 +60,19 @@ class Screener:
             return self.__get_irrelevant_response(output_parser, title, checkpoints)
         self.logger.debug(f"Prompt for {title}:\n{prompt}")
         response_text = model.predict(prompt)
-        while not self.__response_correctly_formatted(response_text, output_parser):
+        counter = 0
+        while not self.__response_correctly_formatted(response_text, output_parser) and counter < 5:
             self.logger.info("The response was not correctly formatted. Asking again.")
             response_text = model.predict(prompt)
+            counter += 1
+        if counter >= 5:
+            self.logger.error("The response was not correctly formatted after 5 attempts.")
+            empty_data = {
+                "title": "",
+                "checkpoints": {},
+                "reasoning": {}
+            }
+            return empty_data
         data = output_parser.parse(response_text)
         return data
 

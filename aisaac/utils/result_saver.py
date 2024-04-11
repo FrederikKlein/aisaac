@@ -112,9 +112,18 @@ class ResultSaver:
             self.add_data_csv(result_list)
 
     def save_response(self, response, title):
-        # TODO: Implement this method
         checkpoints = response['checkpoints']
         reasoning = response['reasoning']
+        # in case the checkpoints are empty, we set the relevancy to None
+        if len(checkpoints) == 0:
+            self.update_csv([{
+                "title": title,
+                "relevant": None,
+                "checkpoints": checkpoints,
+                "reasoning": reasoning
+            }])
+            return
+
         converted_checkpoints = {key: value.lower() == 'true' if isinstance(value, str) else bool(value) for key, value
                                  in checkpoints.items()}
         # check all the values of the converted_checkpoints. If all of them are True, set relevant to True
