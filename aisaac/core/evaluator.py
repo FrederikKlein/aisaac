@@ -70,7 +70,7 @@ class Evaluator:
 
     def draw_confusion_matrix(self, confusion_matrix):
         plt.figure(figsize=(10, 7))
-        plt.imshow([[confusion_matrix['TP'], confusion_matrix['FP']], [confusion_matrix['FN'], confusion_matrix['TN']]],
+        plt.imshow([[confusion_matrix['TP'], confusion_matrix['FN']], [confusion_matrix['FP'], confusion_matrix['TN']]],
                    cmap='Blues')
         plt.colorbar()
         plt.xticks([0, 1], ['Predicted Positive', 'Predicted Negative'])
