@@ -45,8 +45,11 @@ class Screener:
                 # remove the file extension from title. Keep in mind that the file name could have multiple dots
                 title_without_extension = os.path.splitext(title)[0]
                 self.result_saver.save_response(response, title_without_extension)
-                self.logger.debug(f"Processed {title} successfully")
-                self.logger.critical(f"Processed {title} successfully")
+                if(len(response['checkpoints']) > 0):
+                    self.logger.debug(f"Processed {title} successfully")
+                    self.logger.critical(f"Processed {title} successfully")
+                else:
+                    self.logger.critical(f"Processed {title} unsuccessfully")
             except Exception as e:
                 self.logger.error(f"Error processing {title}: {e}")
 
