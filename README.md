@@ -74,7 +74,14 @@ cm.set_config('MODEL_CLIENT_URL', "https://llm.cosy.bio")
 cm.set_config('EMBEDDING_MODEL', "gte-large")
 cm.set_config('RAG_MODEL', "mixtral-instruct-v0.1")
 ```
-All the configuration options of the context manager can be found in the [Context Manager Documentation](docs/context_manager.md) TODO.
+All the configuration options of the context manager can be found in the [Context Manager Documentation](docs/context_manager.md).
+> Nasty workaround: After setting up the context manager, get the document data manager, update the global data and create the vectorstor to access the data initially and prevent bugs.
+>```python
+>cm.get_document_data_manager()
+>cm.update_global_data()
+>cm.get_vector_data_manager().create_document_stores()
+>```
+
 
 Finally, pass the context manager object to the core classes and run the desired functions. For example, to create a new screener object with custom values, use the following code snippet:
 ```python
@@ -128,6 +135,12 @@ cd docs
 cd testing_guides
 jupyter notebook benchmark_guide.ipynb
 ```
+
+Make sure all directories exist like this:
+
+![img.png](img.png)
+
+These directories should be in a folder called 'aisaac' (or to whatever you changed the BASE_DIR in the context manager).
 
 ## Documentation
 For detailed documentation on how to use `aisaac`, refer to the [User Guide](docs/user_guide.md) TODO.
