@@ -33,33 +33,82 @@ Then, follow these steps:
    ```
 
 ## Usage
-`aisaac` can be used as a python package or through its graphical user interface (GUI).
+`aisaac` can be used as a python package. 
+<!--- 
+or through its graphical user interface (GUI) 
+--->
 
 ### Python Package Quickstart Guide
 To use `aisaac` as a python package, import the `aisaac` module and use its classes and functions as needed. 
 The core classes are
-- 'Screener'
-- 'Evaluator'
-- 'Optimizer'
+- Screener
+- Evaluator
+- CriteriaOptimizer
 
-To organize contexts, the core classes use a context manager that is filled with default values. The context manager can be used to set custom values for the classes.
-To do so, first import the context manager:
+To use any of these classes, first import them:
+```python
+from aisaac.aisaac.core.screener import Screener
+from aisaac.aisaac.core.evaluator import Evaluator
+from aisaac.aisaac.core.criteria_optimizer import CriteriaOptimizer
+```
+
+All configurations and contexts are handled by the ContextManager class. This class is part of the utils module and can be imported as follows:
 ```python
 from aisaac.aisaac.utils.context_manager import ContextManager
 ```
-Then, create a context manager object and set custom values:
+
+The core classes use a context manager which is filled with default values. The context manager can be used to set custom values for the classes.
+
+Here is how to set custom values:
 ```python
 cm = ContextManager()
 cm.set_config('RAG_MODEL', "mixtral:latest")
 cm.set_config('RESULT_FILE', "results.csv")
 cm.set_config('CHECKPOINT_DICTIONARY', checkpoint_dict)
 ```
+
+To connect to a Server, use the following code snippet:
+```python
+cm.set_config('LOCAL_MODELS', "False")
+cm.set_config('MODEL_CLIENT_URL', "https://llm.cosy.bio")
+cm.set_config('EMBEDDING_MODEL', "gte-large")
+cm.set_config('RAG_MODEL', "mixtral-instruct-v0.1")
+```
+All the configuration options of the context manager can be found in the [Context Manager Documentation](docs/context_manager.md) TODO.
+
 Finally, pass the context manager object to the core classes and run the desired functions. For example, to create a new screener object with custom values, use the following code snippet:
 ```python
 screener = Screener(context_manager=cm)
 screener.do_screening()
 ```
-All the configuration options of the context manager can be found in the [Context Manager Documentation](docs/context_manager.md) TODO.
+
+```python
+evaluator = Evaluator(cm)
+evaluation = evaluator.get_full_evaluation()
+```
+
+```python
+criteria_optimizer = CriteriaOptimizer(cm)
+# There is a set of optimization methods available
+optimized_criteria = criteria_optimizer.automated_feature_improvement(feature_importance) # automatic
+optimized_criteria = criteria_optimizer.context_aware_feature_improvement(feature_importance) # automatic
+optimized_criteria = criteria_optimizer.context_discriminative_feature_improvement(feature_importance) # automatic
+optimized_criteria = criteria_optimizer.expert_feature_improvement(feature_importance, annotations(optional)) # human in the loop
+optimized_criteria = criteria_optimizer.advanced_feature_improvement(feature_importance, annotations) # human in the loop
+
+
+# For those that need the feature importance, it can be accessed in two ways
+evaluator = Evaluator(cm)
+evaluation = evaluator.get_full_evaluation()
+feature_importance = evaluation[2] # either get the feature importance from the full evaluation
+feature_importance = evaluator.get_feature_importance() # or get it directly
+```
+
+
+The core functions will take all relevant parameters from the context manager. 
+The only notable exception is the criteria optimizer, which requires the feature importance from the evaluation.
+> 🚨 **Please note:** 
+> The results are not stored in the context manager. The results are only returned as a return value of the function.
 
 
 

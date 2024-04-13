@@ -94,7 +94,7 @@ class CriteriaOptimizer:
 
     # The most advanced feature improvement method
     # We ask an LLM to return an improved checkpoint based on the context of the current checkpoint, the expert's notes and the most important text chunks for every document that the expert has labeled. Based on the returned checkpoints, the LLM creates a new one, which is then presented to the expert for approval. Wo do that for every checkpoint that has an importance greater than the threshold
-    def advanced_feature_improvement(self, annotations, checkpoint_importances):
+    def advanced_feature_improvement(self, checkpoint_importances, annotations):
 
         # for every important checkpoint do:
         # for every document (maxed) get the context text and generate improved checkpoints
