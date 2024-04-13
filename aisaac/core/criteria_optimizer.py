@@ -1,4 +1,7 @@
+import math
+
 from langchain.output_parsers import StructuredOutputParser, ResponseSchema
+from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 
 from aisaac.aisaac.utils import Logger
@@ -54,6 +57,39 @@ class CriteriaOptimizer:
                     self.logger.debug(f"Potential new checkpoint: {checkpoint_candidate}")
                     potential_checkpoints.append(checkpoint_candidate)
                 self.checkpoint_dictionary[self.checkpoint_keys[i]] = self.__average_checkpoints(potential_checkpoints)
+        return self.checkpoint_dictionary
+
+    # This function generates one new checkpoint that tries to maximize the difference between
+    # a set of context of the current checkpoint that belong to relevant documents
+    # and a set that belongs to irrelevant documents
+    def context_discriminative_feature_improvement(self, checkpoint_importances):
+        for i, importance in enumerate(checkpoint_importances):
+            if (importance > self.feature_importance_threshold) == self.importance_greater_than_threshold:
+                current_checkpoint = self.checkpoint_dictionary[self.checkpoint_keys[i]]
+                positive_contexts = []
+                negative_contexts = []
+                postive_titles_with_limit = self.__get_postive_runnable_title_with_limit()
+                negative_titles_with_limit = self.__get_negative_runnable_title_with_limit()
+                for title in postive_titles_with_limit:
+                    positive_contexts.append(self.similarity_searcher.similarity_search(title, current_checkpoint))
+                for title in negative_titles_with_limit:
+                    negative_contexts.append(self.similarity_searcher.similarity_search(title, current_checkpoint))
+                negative_context_text = []
+                for item in negative_contexts:
+                    if isinstance(item[0], Document):
+                        negative_context_text.append(item[0].page_content)
+                    elif isinstance(item[0], tuple) and isinstance(item[0][0], Document):
+                        negative_context_text.append(item[0][0].page_content)
+                positive_context_text = []
+                for item in positive_contexts:
+                    if isinstance(item[0], Document):
+                        positive_context_text.append(item[0].page_content)
+                    elif isinstance(item[0], tuple) and isinstance(item[0][0], Document):
+                        positive_context_text.append(item[0][0].page_content)
+
+                positive_context_text = "\n---\n".join(positive_context_text)
+                negative_context_text = "\n---\n".join(negative_context_text)
+                self.checkpoint_dictionary[self.checkpoint_keys[i]] = self.__generate_discriminative_checkpoints(current_checkpoint, positive_context_text, negative_context_text)
         return self.checkpoint_dictionary
 
     # The most advanced feature improvement method
@@ -262,3 +298,50 @@ class CriteriaOptimizer:
     # gets the first MAX_DOCUMENTS amount of runnable titles
     def __get_runnable_title_with_limit(self):
         return self.dm.get_runnable_titles()[:self.max_documents]
+
+    def __generate_discriminative_checkpoints(self, current_checkpoint, positive_contexts, negative_contexts):
+        prompt_text_template = """
+        [INST] 
+        A criterion is a plain text string used to determine whether to include or 
+        exclude a piece of data in a dataset. Your task is to create a new criterion based on the provided sets of 
+        contexts. You are provided with examples where the current criterion has correctly evaluated (True) and 
+        incorrectly evaluated (False). Generate a refined criterion that improves the accuracy of these evaluations. 
+        
+        
+        Current Criterion: {checkpoint}
+        Contexts Evaluated as True (Should be True): {positive_contexts}
+        Contexts Evaluated as False (Should be False): {negative_contexts}
+        
+        Objective: Develop a more accurate criterion that enhances the differentiation between the True and False 
+        contexts. Directly provide the new criterion; do not describe how to create it or the reasoning behind it.
+        
+        {format_instructions}
+        [/INST]
+        """
+
+        output_parser = self.__get_output_parser()
+        format_instructions = output_parser.get_format_instructions()
+
+        prompt_template = ChatPromptTemplate.from_template(prompt_text_template)
+        prompt = prompt_template.format(checkpoint=current_checkpoint, positive_contexts=str(positive_contexts), 
+                                        negative_contexts=str(negative_contexts), format_instructions=format_instructions)
+        self.logger.debug(prompt)
+        model = self.mm.get_rag_model()
+        response_text = model.predict(prompt)
+        while not self.__response_correctly_formatted(response_text, output_parser):
+            self.logger.info("The response was not correctly formatted. Asking again.")
+            response_text = model.predict(prompt)
+        data = output_parser.parse(response_text)
+        first_key = next(iter(data))
+        self.logger.debug(f"Discriminative checkpoint: {data[first_key]}")
+        data = data[first_key]
+        self.logger.debug(data)
+
+        return data
+
+    def __get_postive_runnable_title_with_limit(self):
+        return self.dm.get_relevant_runnable_titles(self.result_saver)[:math.floor(self.max_documents/2)]
+
+    def __get_negative_runnable_title_with_limit(self):
+        return self.dm.get_irrelevant_runnable_titles(self.result_saver)[:math.floor(self.max_documents/2)]
+

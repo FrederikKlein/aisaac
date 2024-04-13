@@ -26,6 +26,9 @@ class DocumentManager:
         self.full_chroma_path = self.system_manager.get_full_path(self.chroma_path)
         self.bin_path = self.system_manager.get_full_path(context_manager.get_config('BIN_PATH'))
         self.system_manager.make_directory(context_manager.get_config('BIN_PATH'))
+        self.full_original_result_path = self.system_manager.get_full_path(
+            f"{context_manager.get_config('ORIGINAL_RESULT_PATH')}/{context_manager.get_config('ORIGINAL_RESULT_FILE')}")
+
         self.global_data = []
         self.logger = Logger(__name__).get_logger()
         self.__load_global_data()
@@ -103,7 +106,6 @@ class DocumentManager:
                     return_titles.append(title)
         return return_titles
 
-
     def get_runnable_titles(self):
         global_titles = self.get_all_titles()
         for title in global_titles[:]:
@@ -116,6 +118,23 @@ class DocumentManager:
             else:
                 self.logger.debug(f"Document store for {dir_title} exists.")
         return global_titles
+
+    def get_relevant_runnable_titles(self, result_saver):
+        all_runnable_titles = self.get_runnable_titles()
+        gold_standard_relevant = result_saver.read_csv_to_dict_relevant_only(self.full_original_result_path)
+        for title in all_runnable_titles[:]:
+            title_without_ext = self.system_manager.get_title_without_extension(title)
+            if title_without_ext not in gold_standard_relevant:
+                all_runnable_titles.remove(title)
+        return all_runnable_titles
+
+    def get_irrelevant_runnable_titles(self, result_saver):
+        all_runnable_titles = self.get_runnable_titles()
+        gold_standard_relevant = result_saver.read_csv_to_dict_relevant_only(self.full_original_result_path)
+        for title in all_runnable_titles[:]:
+            if title in gold_standard_relevant:
+                all_runnable_titles.remove(title)
+        return all_runnable_titles
 
     def __get_all_data(self):
         return_data = []
