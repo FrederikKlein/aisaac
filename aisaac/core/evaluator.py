@@ -43,6 +43,19 @@ class Evaluator:
                         tn += 1
         return tp, tn, fp, fn
 
+    def get_completion_rate(self):
+        data = self.result_saver.read_csv_to_dict_relevant_only(self.full_result_path)
+        total = len(data)
+        completed = 0
+        for title in data:
+            #check if there is a result for this entry
+            if title == '.idea':
+                completed += 1
+                continue
+            if data[title] is not None and data[title] != "":
+                completed += 1
+        return completed / total
+
     def calculate_mcc(self, tp, tn, fp, fn):
         # to all variables, add one so that we don't get a 0-division error
         tp += 1
