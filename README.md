@@ -138,9 +138,13 @@ jupyter notebook benchmark_guide.ipynb
 
 Make sure all directories exist like this:
 
-![img.png](img.png)
+![img.png](docs/images/img.png)
 
 These directories should be in a folder called 'aisaac' (or to whatever you changed the BASE_DIR in the context manager).
+
+### Current Benchmarking results
+![img_1.png](docs/images/img_1.png)
+Note: Benchmarking results will be updated soon
 
 ## Documentation
 For detailed documentation on how to use `aisaac`, refer to the [User Guide](docs/user_guide.md) TODO.
