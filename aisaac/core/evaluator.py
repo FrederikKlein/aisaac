@@ -1,4 +1,5 @@
 import json
+import math
 
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -72,6 +73,15 @@ class Evaluator:
 
     def calculate_sensitivity(self, tp, fn):
         return tp / (tp + fn)
+
+    def calculate_fowlkes_mallows_index(self, tp, tn, fp, fn):
+        tp += 1
+        tn += 1
+        fp += 1
+        fn += 1
+        precision = tp / (tp + fp)
+        recall = tp / (tp + fn)
+        return math.sqrt(precision * recall)
 
     def generate_confusion_matrix(self, tp, tn, fp, fn):
         return {
@@ -173,9 +183,22 @@ class Evaluator:
     def get_cohen_kappa(self):
         # TODO edit this function to work with the actual data
         from sklearn.metrics import cohen_kappa_score
-        y1 = ["negative", "positive", "negative", "neutral", "positive"]
-        y2 = ["negative", "positive", "negative", "neutral", "negative"]
-        cohen_kappa_score(y1, y2)
+
+        gold_standard = self.get_gold_standard_dataframe().dropna()
+        predictions = self.get_results_dataframe().dropna()
+        # Drop rows with missing values
+        gold_standard_cleaned = gold_standard.merge(predictions, on='title', how='inner')
+        predictions_cleaned = predictions.merge(gold_standard, on='title', how='inner')
+        # Preprocessing the data to catch any errors in the format
+        # Function to convert potential string representations of boolean values to actual boolean values
+        gold_standard_preprocessed = gold_standard_cleaned.replace(
+            {'True': True, 'False': False, 'true': True, 'false': False})
+        predictions_preprocessed = predictions_cleaned.replace(
+            {'True': True, 'False': False, 'true': True, 'false': False})
+
+        y_true = gold_standard_preprocessed.iloc[:, 1].values
+        y_pred = predictions_preprocessed.iloc[:, 1].values
+        return cohen_kappa_score(y_true, y_pred)
 
     def get_full_evaluation(self):
         tptnfpfn = self.get_tp_tn_fp_fn()
@@ -187,4 +210,9 @@ class Evaluator:
         self.draw_confusion_matrix(confusion_matrix)
         specificity = self.calculate_specificity(tptnfpfn[1], tptnfpfn[2])
         sensitivity = self.calculate_sensitivity(tptnfpfn[0], tptnfpfn[3])
-        return mcc, f_score, feature_importance, confusion_matrix, specificity, sensitivity
+        cohens_kappa = self.get_cohen_kappa()
+        fmi = self.calculate_fowlkes_mallows_index(*tptnfpfn)
+        completion_rate = self.get_completion_rate()
+        return mcc, f_score, feature_importance, confusion_matrix, specificity, sensitivity, cohens_kappa, fmi, completion_rate
+
+#%%
