@@ -200,6 +200,17 @@ class Evaluator:
         y_pred = predictions_preprocessed.iloc[:, 1].values
         return cohen_kappa_score(y_true, y_pred)
 
+    def get_benchmarking_scores(self):
+        tptnfpfn = self.get_tp_tn_fp_fn()
+        mcc = self.calculate_mcc(*tptnfpfn)
+        kappa = self.get_cohen_kappa()
+        fmi = self.calculate_fowlkes_mallows_index(*tptnfpfn)
+        f_score = self.calculate_f_score(tptnfpfn[0], tptnfpfn[2], tptnfpfn[3])
+        specificity = self.calculate_specificity(tptnfpfn[1], tptnfpfn[2])
+        sensitivity = self.calculate_sensitivity(tptnfpfn[0], tptnfpfn[3])
+        completion_rate = self.get_completion_rate()
+        return mcc, kappa, fmi, f_score, specificity, sensitivity, completion_rate
+
     def get_full_evaluation(self):
         tptnfpfn = self.get_tp_tn_fp_fn()
         mcc = self.calculate_mcc(*tptnfpfn)
