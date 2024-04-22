@@ -68,6 +68,9 @@ class Evaluator:
     def calculate_f_score(self, tp, fp, fn):
         return tp / (tp + 0.5 * (fp + fn))
 
+    def calculate_accuracy(self, tp, tn, fp, fn):
+        return (tp + tn) / (tp + tn + fp + fn)
+
     def calculate_specificity(self, tn, fp):
         return tn / (tn + fp)
 
@@ -204,12 +207,13 @@ class Evaluator:
         tptnfpfn = self.get_tp_tn_fp_fn()
         mcc = self.calculate_mcc(*tptnfpfn)
         kappa = self.get_cohen_kappa()
+        accuracy = self.calculate_accuracy(*tptnfpfn)
         fmi = self.calculate_fowlkes_mallows_index(*tptnfpfn)
         f_score = self.calculate_f_score(tptnfpfn[0], tptnfpfn[2], tptnfpfn[3])
         specificity = self.calculate_specificity(tptnfpfn[1], tptnfpfn[2])
         sensitivity = self.calculate_sensitivity(tptnfpfn[0], tptnfpfn[3])
         completion_rate = self.get_completion_rate()
-        return mcc, kappa, fmi, f_score, specificity, sensitivity, completion_rate
+        return mcc, kappa, accuracy, fmi, f_score, specificity, sensitivity, completion_rate
 
     def get_full_evaluation(self):
         tptnfpfn = self.get_tp_tn_fp_fn()
