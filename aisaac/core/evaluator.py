@@ -1,6 +1,7 @@
 import json
 import math
 
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
@@ -183,15 +184,13 @@ class Evaluator:
         # plt.savefig('feature-importance.pdf', dpi=300)
         plt.show()
 
-    def get_cohen_kappa(self):
-        # TODO edit this function to work with the actual data
-        from sklearn.metrics import cohen_kappa_score
 
-        gold_standard = self.get_gold_standard_dataframe().dropna()
-        predictions = self.get_results_dataframe().dropna()
+    def get_y_true_y_pred(self):
+        gold_standard = self.get_gold_standard_dataframe()
+        predictions = self.get_results_dataframe()
         # Drop rows with missing values
-        gold_standard_cleaned = gold_standard.merge(predictions, on='title', how='inner')
-        predictions_cleaned = predictions.merge(gold_standard, on='title', how='inner')
+        gold_standard_cleaned = gold_standard.dropna()
+        predictions_cleaned = predictions.dropna()
         # Preprocessing the data to catch any errors in the format
         # Function to convert potential string representations of boolean values to actual boolean values
         gold_standard_preprocessed = gold_standard_cleaned.replace(
@@ -201,7 +200,26 @@ class Evaluator:
 
         y_true = gold_standard_preprocessed.iloc[:, 1].values
         y_pred = predictions_preprocessed.iloc[:, 1].values
+        return y_true, y_pred
+
+    def get_cohen_kappa(self):
+        from sklearn.metrics import cohen_kappa_score
+        y_true, y_pred = self.get_y_true_y_pred()
         return cohen_kappa_score(y_true, y_pred)
+
+    def calculate_pabak(self):
+        y_true, y_pred = self.get_y_true_y_pred()
+        # Ensure y_true and y_pred are not empty
+        if len(y_true) > 0 and len(y_pred) > 0:
+            # Calculate the observed agreement
+            agreement_array = np.array(y_true) == np.array(y_pred)
+            # Ensure there is at least one True value
+            if np.any(agreement_array):
+                agreement = np.mean(agreement_array)
+                # Calculate PABAK
+                pabak = (2 * agreement) - 1
+                return pabak
+        return np.nan  # Return NaN if conditions are not met
 
     def get_benchmarking_scores(self):
         tptnfpfn = self.get_tp_tn_fp_fn()
@@ -229,5 +247,42 @@ class Evaluator:
         fmi = self.calculate_fowlkes_mallows_index(*tptnfpfn)
         completion_rate = self.get_completion_rate()
         return mcc, f_score, feature_importance, confusion_matrix, specificity, sensitivity, cohens_kappa, fmi, completion_rate
+
+    def get_evaluation_dict(self):
+        y_true, y_pred = self.get_y_true_y_pred()
+        record2answer = self.result_saver.read_csv_to_dict_relevant_only(self.full_result_path)
+        # drop all the records that are not in the original result file
+        missing_records = self.result_saver.read_csv_to_dict_relevant_only(self.full_original_result_path)
+
+        return {
+            "TP": self.get_tp_tn_fp_fn()[0],
+            "TN": self.get_tp_tn_fp_fn()[1],
+            "FP": self.get_tp_tn_fp_fn()[2],
+            "FN": self.get_tp_tn_fp_fn()[3],
+            "Confusion Matri x": self.generate_confusion_matrix(*self.get_tp_tn_fp_fn()),
+            "ratio_of_completion": self.get_completion_rate(),
+            "Precision": self.calculate_precision(),
+            "Recall": self.calculate_recall(),
+            "F1-score": self.calculate_f1_score(),
+            "Matthews correlation coefficient": self.calculate_mcc(*self.get_tp_tn_fp_fn()),
+            "Cohen's kappa": self.get_cohen_kappa(),
+            "PABAK": self.calculate_pabak(),
+            'ratio_of_completion': self.get_completion_rate(),
+            'succesfully_analyzed_articles': len(y_pred),
+            'articles_that_did_not_have_predictions': len(y_true) - len(y_pred),
+        }
+
+    def calculate_precision(self):
+        tp, fp = self.get_tp_tn_fp_fn()[0], self.get_tp_tn_fp_fn()[2]
+        return tp / (tp + fp)
+
+    def calculate_recall(self):
+        tp, fn = self.get_tp_tn_fp_fn()[0], self.get_tp_tn_fp_fn()[3]
+        return tp / (tp + fn)
+
+    def calculate_f1_score(self):
+        precision = self.calculate_precision()
+        recall = self.calculate_recall()
+        return 2 * precision * recall / (precision + recall)
 
 #%%
