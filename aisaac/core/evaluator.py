@@ -1,5 +1,6 @@
 import json
 import math
+import unicodedata
 
 import numpy as np
 import pandas as pd
@@ -21,28 +22,13 @@ class Evaluator:
         self.result_saver = context_manager.get_result_saver()
 
     def get_tp_tn_fp_fn(self):
-        data = self.result_saver.read_csv_to_dict_relevant_only(self.full_result_path)
-        gold_standard = self.result_saver.read_csv_to_dict_relevant_only(self.full_original_result_path)
-        tp = 0
-        tn = 0
-        fp = 0
-        fn = 0
-        for title in data:
-            # if there is no result for this entry we want to skip it
-            if data[title] is None or data[title] == "":
-                continue
-            relevant = (data[title] == 'True')
-            if title in gold_standard:
-                if gold_standard[title] == 'True':
-                    if relevant:
-                        tp += 1
-                    else:
-                        fn += 1
-                else:
-                    if relevant:
-                        fp += 1
-                    else:
-                        tn += 1
+        y_true, y_pred = self.get_y_true_y_pred()
+
+        tp = sum((y_true == True) & (y_pred == True))
+        tn = sum((y_true == False) & (y_pred == False))
+        fp = sum((y_true == False) & (y_pred == True))
+        fn = sum((y_true == True) & (y_pred == False))
+
         return tp, tn, fp, fn
 
     def get_completion_rate(self):
@@ -50,9 +36,9 @@ class Evaluator:
         total = len(data)
         completed = 0
         for title in data:
-            #check if there is a result for this entry
+            # check if there is a result for this entry
             if title == '.idea':
-                completed += 1
+                total -= 1
                 continue
             if data[title] is not None and data[title] != "":
                 completed += 1
@@ -133,6 +119,11 @@ class Evaluator:
         df_results.drop(columns=['reasoning'], inplace=True)
         return df_results
 
+    def get_results_dataframe_title_relevant_column(self):
+        df_results = self.get_results_dataframe()
+        df_results = df_results.loc[:, ['title', 'relevant']]
+        return df_results
+
     def get_gold_standard_dataframe(self):
         df_results = pd.read_csv(self.full_original_result_path)
         return df_results
@@ -184,22 +175,30 @@ class Evaluator:
         # plt.savefig('feature-importance.pdf', dpi=300)
         plt.show()
 
-
     def get_y_true_y_pred(self):
         gold_standard = self.get_gold_standard_dataframe()
-        predictions = self.get_results_dataframe()
+        predictions = self.get_results_dataframe_title_relevant_column()
         # Drop rows with missing values
         gold_standard_cleaned = gold_standard.dropna()
         predictions_cleaned = predictions.dropna()
-        # Preprocessing the data to catch any errors in the format
-        # Function to convert potential string representations of boolean values to actual boolean values
-        gold_standard_preprocessed = gold_standard_cleaned.replace(
-            {'True': True, 'False': False, 'true': True, 'false': False})
-        predictions_preprocessed = predictions_cleaned.replace(
-            {'True': True, 'False': False, 'true': True, 'false': False})
 
-        y_true = gold_standard_preprocessed.iloc[:, 1].values
-        y_pred = predictions_preprocessed.iloc[:, 1].values
+        # Remove leading and trailing quotation marks and normalize umlauts in the gold standard
+        gold_standard_cleaned.iloc[:, 0] = gold_standard_cleaned.iloc[:, 0].str.strip('"').apply(normalize_string)
+
+        # Normalize umlauts in the predictions cleaned
+        predictions_cleaned.iloc[:, 0] = predictions_cleaned.iloc[:, 0].apply(normalize_string)
+        # Ensure alignment by merging on a common identifier (assuming the first column is the identifier)
+        merged = gold_standard_cleaned.merge(predictions_cleaned, on=gold_standard_cleaned.columns[0],
+                                             suffixes=('_gold', '_pred'))
+
+        # Drop rows with any missing values in the merged dataframe
+        merged_cleaned = merged.dropna()
+        merge_preprocessed = merged_cleaned.replace({'True': True, 'False': False, 'true': True, 'false': False})
+        # merge_preprocessed = merged_cleaned
+
+        # Extract y_true and y_pred from the cleaned, merged dataframe
+        y_true = merge_preprocessed.iloc[:, 1].values
+        y_pred = merge_preprocessed.iloc[:, 2].values
         return y_true, y_pred
 
     def get_cohen_kappa(self):
@@ -268,8 +267,8 @@ class Evaluator:
             "Cohen's kappa": self.get_cohen_kappa(),
             "PABAK": self.calculate_pabak(),
             'ratio_of_completion': self.get_completion_rate(),
-            'succesfully_analyzed_articles': len(y_pred),
-            'articles_that_did_not_have_predictions': len(y_true) - len(y_pred),
+            'succesfully_analyzed_articles': sum(self.get_tp_tn_fp_fn()),
+            'articles_that_did_not_have_predictions': 159 - sum(self.get_tp_tn_fp_fn()),
         }
 
     def calculate_precision(self):
@@ -285,4 +284,9 @@ class Evaluator:
         recall = self.calculate_recall()
         return 2 * precision * recall / (precision + recall)
 
-#%%
+
+def normalize_string(s):
+    # Normalize the string to NFC form
+    return unicodedata.normalize('NFC', s)
+
+# %%
