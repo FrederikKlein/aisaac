@@ -143,8 +143,7 @@ Make sure all directories exist like this:
 These directories should be in a folder called 'aisaac' (or to whatever you changed the BASE_DIR in the context manager).
 
 ### Current Benchmarking results
-![img_1.png](docs/images/img_1.png)
-Note: Benchmarking results will be updated soon
+This project was developed as part of my bachelors theis at the University of Hamburg. The benchmarking results and the full thesis can be found [here](docs/UHH_Bachelor_sThesis_FrederikKlein.pdf).
 
 ## Documentation
 For detailed documentation on how to use `aisaac`, refer to the [User Guide](docs/user_guide.md) TODO.
